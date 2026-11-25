@@ -48,7 +48,7 @@ import DemoMarketPrices from "./DemoMarketPrices";
 
 import "./FarmerDashboard.css";
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL || "http://127.0.0.1:5000/api";
 const REFRESH_INTERVAL = 5000;
 
 const initialCropForm = {
@@ -284,7 +284,7 @@ function FarmerDashboard({ user, onLogout }) {
         getAvailableCrops(),
         getMyCrops(),
 
-        fetch(`${API_BASE_URL}/api/crop-sales/profit-loss`, {
+        fetch(`${API_BASE_URL}/crop-sales/profit-loss`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -1604,3 +1604,4 @@ function FarmerDashboard({ user, onLogout }) {
 }
 
 export default FarmerDashboard;
+
