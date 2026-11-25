@@ -58,36 +58,74 @@ exports.predictDisease = async (req, res) => {
       req.file.originalname
     );
 
-    const mlServiceUrl =
+    const mlServiceUrl = (
       process.env.ML_SERVICE_URL ||
-      "http://127.0.0.1:8000";
+      "http://127.0.0.1:8000"
+    ).replace(/\/+$/, "");
 
-    const response = await fetch(
-      `${mlServiceUrl}/predict?crop=${encodeURIComponent(crop)}`,
-      {
-        method: "POST",
-        body: formData,
-      }
+    const mlUrl =
+      `${mlServiceUrl}/predict?crop=${encodeURIComponent(crop)}`;
+
+    console.log("ML Request URL:", mlUrl);
+    console.log("Uploaded image:", req.file.originalname);
+    console.log("Image MIME type:", req.file.mimetype);
+    console.log("Image size:", req.file.size);
+
+    const response = await fetch(mlUrl, {
+      method: "POST",
+      body: formData,
+      signal: AbortSignal.timeout(120000),
+    });
+
+    const responseText = await response.text();
+
+    console.log("ML HTTP Status:", response.status);
+    console.log(
+      "ML Content-Type:",
+      response.headers.get("content-type")
+    );
+    console.log(
+      "ML Raw Response:",
+      responseText.substring(0, 3000)
     );
 
     let result;
 
     try {
-      result = await response.json();
-    } catch {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error(
+        "ML JSON Parse Error:",
+        parseError.message
+      );
+
       return res.status(502).json({
         success: false,
-        message: "Invalid response received from ML service.",
+        message: "ML service returned an invalid response.",
+        ml_status: response.status,
       });
     }
 
     if (!response.ok) {
-      return res.status(response.status).json({
+      return res.status(502).json({
         success: false,
         message:
           result.detail ||
           result.message ||
           "ML prediction failed",
+      });
+    }
+
+    if (
+      !result ||
+      typeof result !== "object" ||
+      Array.isArray(result)
+    ) {
+      console.error("Unexpected ML response structure:", result);
+
+      return res.status(502).json({
+        success: false,
+        message: "Unexpected ML response structure.",
       });
     }
 
@@ -153,13 +191,18 @@ exports.predictDisease = async (req, res) => {
   } catch (error) {
     console.error(
       "Disease Detection Error:",
-      error.message
+      error.stack || error.message
     );
 
-    return res.status(503).json({
+    const isTimeout =
+      error.name === "TimeoutError" ||
+      error.name === "AbortError";
+
+    return res.status(isTimeout ? 504 : 503).json({
       success: false,
-      message:
-        "Local ML service is unavailable. Please start the ML service.",
+      message: isTimeout
+        ? "ML prediction timed out. Please try again."
+        : "Unable to communicate with the ML service.",
     });
   }
 };
