@@ -1,0 +1,536 @@
+
+.fec-container,
+.efr-container {
+  width: 100%;
+  min-width: 0;
+  color: #24352a;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.fec-container *,
+.efr-container * {
+  box-sizing: border-box;
+}
+
+/* Header */
+
+.fec-header,
+.efr-header,
+.fec-history-heading,
+.fec-request-top,
+.efr-card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.fec-header,
+.efr-header {
+  margin-bottom: 24px;
+}
+
+.fec-header > div,
+.efr-header > div,
+.fec-history-heading > div,
+.fec-request-top > div,
+.efr-card-heading > div {
+  min-width: 0;
+}
+
+.fec-eyebrow,
+.efr-eyebrow {
+  color: #23834c;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.fec-header h2,
+.efr-header h2 {
+  margin: 8px 0;
+  font-size: 27px;
+  line-height: 1.45;
+  color: #1f5132;
+  overflow-wrap: anywhere;
+}
+
+.fec-header p,
+.efr-header p,
+.fec-history-heading p {
+  color: #758078;
+  margin: 0;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+/* Panels and cards */
+
+.fec-panel,
+.fec-request-card,
+.efr-card,
+.fec-empty-card,
+.efr-empty {
+  background: #fff;
+  border: 1px solid #e5eee7;
+  border-radius: 15px;
+  padding: 22px;
+  margin-bottom: 20px;
+  box-shadow: 0 5px 20px rgba(26, 65, 38, 0.045);
+  min-width: 0;
+}
+
+.fec-panel h3,
+.fec-history h3 {
+  margin-top: 0;
+  color: #245b38;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* Form */
+
+.fec-panel form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fec-panel label,
+.efr-actions label {
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 8px;
+  color: #344b3b;
+  line-height: 1.6;
+}
+
+.fec-panel input,
+.fec-panel select,
+.fec-panel textarea,
+.efr-actions textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid #dce7de;
+  border-radius: 9px;
+  padding: 12px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.7;
+  background: #fff;
+  color: #24352a;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fec-panel input,
+.fec-panel select {
+  min-height: 46px;
+}
+
+.fec-panel textarea,
+.efr-actions textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.fec-panel input::placeholder,
+.fec-panel textarea::placeholder,
+.efr-actions textarea::placeholder {
+  color: #9aa59d;
+  opacity: 1;
+}
+
+.fec-panel input:focus,
+.fec-panel select:focus,
+.fec-panel textarea:focus,
+.efr-actions textarea:focus {
+  outline: none;
+  border-color: #27864d;
+  box-shadow: 0 0 0 3px rgba(39, 134, 77, 0.12);
+}
+
+/* Buttons */
+
+.fec-submit,
+.fec-refresh,
+.efr-header button,
+.efr-actions button {
+  border: 0;
+  border-radius: 9px;
+  padding: 11px 17px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.fec-submit {
+  background: #23834c;
+  color: white;
+  margin-top: 12px;
+  min-height: 44px;
+}
+
+.fec-submit:hover:not(:disabled) {
+  background: #176a3b;
+  box-shadow: 0 4px 12px rgba(35, 131, 76, 0.18);
+}
+
+.fec-submit:disabled,
+.fec-refresh:disabled,
+.efr-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.fec-refresh,
+.efr-header button {
+  background: #e9f5ec;
+  color: #237343;
+  white-space: nowrap;
+  min-height: 42px;
+}
+
+.fec-refresh:hover:not(:disabled),
+.efr-header button:hover:not(:disabled) {
+  background: #d8eddd;
+}
+
+/* History */
+
+.fec-history {
+  margin-top: 30px;
+  min-width: 0;
+}
+
+.fec-history-heading {
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.fec-history-heading h3 {
+  margin-bottom: 7px;
+}
+
+.fec-count {
+  background: #eaf5ed;
+  color: #237343;
+  border-radius: 20px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Request list */
+
+.fec-request-list,
+.efr-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
+  min-width: 0;
+}
+
+.fec-request-card h4,
+.efr-card h3 {
+  margin: 0 0 7px;
+  color: #285b3b;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.fec-request-top p,
+.efr-card-heading p {
+  margin: 4px 0;
+  color: #77827a;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+/* Status */
+
+.fec-status,
+.efr-status {
+  padding: 6px 11px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.fec-status.pending,
+.efr-status.pending {
+  background: #fff4d8;
+  color: #9b6b00;
+}
+
+.fec-status.accepted,
+.efr-status.accepted {
+  background: #e3efff;
+  color: #2861a6;
+}
+
+.fec-status.in_progress,
+.fec-status.in-progress,
+.efr-status.in_progress,
+.efr-status.in-progress {
+  background: #e3efff;
+  color: #2861a6;
+}
+
+.fec-status.responded,
+.efr-status.responded {
+  background: #e6f5e9;
+  color: #237343;
+}
+
+.fec-status.resolved,
+.efr-status.resolved {
+  background: #e8edf0;
+  color: #52616b;
+}
+
+.fec-status.rejected,
+.efr-status.rejected {
+  background: #ffe9e8;
+  color: #b23a32;
+}
+
+.fec-status.closed,
+.efr-status.closed {
+  background: #edf0f2;
+  color: #52616b;
+}
+
+/* Problem details */
+
+.fec-category {
+  color: #27864d;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.6;
+  margin: 12px 0 8px;
+  overflow-wrap: anywhere;
+}
+
+.fec-problem,
+.efr-problem p,
+.efr-existing-response p {
+  color: #58665d;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Expert response */
+
+.fec-response,
+.efr-existing-response {
+  background: #edf8ef;
+  border-left: 4px solid #27864d;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px 0;
+  min-width: 0;
+}
+
+.fec-response strong,
+.efr-existing-response strong {
+  color: #237343;
+  line-height: 1.6;
+}
+
+.fec-response p {
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.fec-response small,
+.fec-date,
+.efr-card > small {
+  color: #849087;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+/* Expert request information */
+
+.efr-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 15px 0;
+}
+
+.efr-info span {
+  background: #f1f6f2;
+  padding: 7px 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* Expert actions */
+
+.efr-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.efr-accept,
+.efr-reply {
+  background: #23834c;
+  color: #fff;
+}
+
+.efr-reject {
+  background: #ffeded;
+  color: #b23a32;
+}
+
+.efr-resolve {
+  background: #e9f0f4;
+  color: #435b6a;
+}
+
+/* Alerts */
+
+.fec-alert,
+.efr-alert {
+  padding: 12px 15px;
+  border-radius: 9px;
+  margin-bottom: 15px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.fec-alert.error,
+.efr-alert.error {
+  background: #ffeceb;
+  color: #b23a32;
+  border: 1px solid #f7d2d0;
+}
+
+.fec-alert.success,
+.efr-alert.success {
+  background: #e9f7ec;
+  color: #237343;
+  border: 1px solid #ccebd3;
+}
+
+/* Empty and loading states */
+
+.fec-empty,
+.fec-loading {
+  text-align: center;
+  padding: 25px;
+  color: #758078;
+  line-height: 1.8;
+}
+
+.fec-empty-card,
+.efr-empty {
+  text-align: center;
+  color: #758078;
+  line-height: 1.8;
+}
+
+.fec-empty-card h4,
+.efr-empty h4 {
+  color: #42594a;
+  margin-top: 0;
+}
+
+/* Keyboard accessibility */
+
+.fec-container button:focus-visible,
+.efr-container button:focus-visible {
+  outline: 3px solid rgba(39, 134, 77, 0.3);
+  outline-offset: 3px;
+}
+
+/* Tablet and mobile */
+
+@media (max-width: 650px) {
+  .fec-header,
+  .efr-header,
+  .fec-history-heading,
+  .fec-request-top,
+  .efr-card-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .fec-header,
+  .efr-header {
+    gap: 12px;
+  }
+
+  .fec-header h2,
+  .efr-header h2 {
+    font-size: 23px;
+  }
+
+  .fec-refresh,
+  .efr-header button {
+    align-self: flex-start;
+  }
+
+  .fec-panel,
+  .fec-request-card,
+  .efr-card,
+  .fec-empty-card,
+  .efr-empty {
+    padding: 16px;
+  }
+
+  .fec-history-heading {
+    gap: 10px;
+  }
+
+  .fec-count {
+    align-self: flex-start;
+  }
+
+  .fec-status,
+  .efr-status {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 400px) {
+  .fec-header h2,
+  .efr-header h2 {
+    font-size: 21px;
+  }
+
+  .fec-panel,
+  .fec-request-card,
+  .efr-card {
+    padding: 13px;
+  }
+
+  .fec-panel input,
+  .fec-panel select,
+  .fec-panel textarea,
+  .efr-actions textarea {
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .fec-submit,
+  .fec-refresh {
+    width: 100%;
+  }
+}

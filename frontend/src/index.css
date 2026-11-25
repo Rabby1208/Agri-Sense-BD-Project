@@ -1,0 +1,154 @@
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: Inter, "Noto Sans Bengali", Arial, sans-serif;
+  background: #ffffff;
+  color: #1d2b21;
+}
+
+html[lang="bn"] body {
+  font-family: "Noto Sans Bengali", "Hind Siliguri", Arial, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+img {
+  max-width: 100%;
+}
+
+a {
+  text-decoration: none;
+}
+
+/* ==========================================
+   LANGUAGE SWITCHER
+========================================== */
+
+.language-switcher {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 7px 11px;
+  background: #ffffff;
+  border: 1px solid #dce8dd;
+  border-radius: 10px;
+  color: #285b35;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(20, 70, 35, 0.06);
+}
+
+.language-label {
+  color: #526557;
+}
+
+.language-option {
+  border: 0;
+  background: transparent;
+  color: #526557;
+  padding: 5px 7px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.language-option:hover {
+  background: #edf6ee;
+  color: #1b5e20;
+}
+
+.language-option.active {
+  background: #1b5e20;
+  color: #ffffff;
+}
+
+.language-option:focus-visible {
+  outline: 2px solid #f4a62a;
+  outline-offset: 2px;
+}
+
+/* ==========================================
+   AUTH ACTIONS
+========================================== */
+
+.agrisense-auth-actions {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 999;
+  display: flex;
+  gap: 10px;
+}
+
+.agrisense-auth-actions button {
+  border: 0;
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.agrisense-auth-actions button:first-child {
+  background: #1b5e20;
+  color: #fff;
+}
+
+.agrisense-auth-actions button:last-child {
+  background: #f4a62a;
+  color: #17251a;
+}
+
+.agrisense-auth-actions button:hover {
+  transform: translateY(-2px);
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 480px) {
+  .agrisense-auth-actions {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .agrisense-auth-actions button {
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+
+  .language-switcher {
+    gap: 5px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .language-option {
+    padding: 5px;
+    font-size: 12px;
+  }
+}

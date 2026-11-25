@@ -1,0 +1,20 @@
+
+/* Expert Farmer Requests shares the main communication styles. */
+@import "./FarmerExpertCommunication.css";
+
+.efr-container {
+  width: 100%;
+}
+
+.efr-card {
+  overflow-wrap: anywhere;
+}
+
+.efr-card a {
+  color: #237343;
+  font-weight: 700;
+}
+
+.efr-actions button {
+  min-height: 40px;
+}
