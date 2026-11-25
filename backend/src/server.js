@@ -17,12 +17,11 @@ const marketplaceRoutes = require("./routes/marketplaceRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const adminExpertRoutes = require("./routes/adminExpertRoutes");
 const expertRoutes = require("./routes/expertRoutes");
-
 const farmingExpenseRoutes = require("./routes/farmingExpenseRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 
-// Farmer Disease History
 const farmerDiseaseHistoryRoutes = require("./routes/farmerDiseaseHistoryRoutes");
+const diseaseDetectionRoutes = require("./routes/diseaseDetectionRoutes");
 
 // ==========================================
 // APP INITIALIZATION
@@ -52,16 +51,12 @@ app.use("/api/farmer", farmerRoutes);
 app.use("/api/finance", financeRoutes);
 
 // ==========================================
-// FARMER DISEASE DETECTION HISTORY
+// DISEASE DETECTION
 // ==========================================
 
-// Main endpoint
-app.use(
-  "/api/disease-detection/history",
-  farmerDiseaseHistoryRoutes
-);
+app.use("/api/disease-detection", diseaseDetectionRoutes);
 
-// Alternative endpoint aliases
+// History aliases
 app.use(
   "/api/farmer/disease-history",
   farmerDiseaseHistoryRoutes
