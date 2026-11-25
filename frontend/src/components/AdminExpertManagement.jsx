@@ -1,4 +1,4 @@
-
+﻿
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -6,7 +6,7 @@ import {
   getAllExperts,
   updateExpertStatus,
   deleteExpert,
-} from "../services/adminExpertApi";
+} from "../services/AdminExpertApi";
 
 export default function AdminExpertManagement() {
   const { i18n } = useTranslation();
@@ -39,7 +39,7 @@ export default function AdminExpertManagement() {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          t("Unable to load experts.", "বিশেষজ্ঞদের তথ্য লোড করা যায়নি।")
+          t("Unable to load experts.", "à¦¬à¦¿à¦¶à§‡à¦·à¦œà§à¦žà¦¦à§‡à¦° à¦¤à¦¥à§à¦¯ à¦²à§‹à¦¡ à¦•à¦°à¦¾ à¦¯à¦¾à§Ÿà¦¨à¦¿à¥¤")
       );
     } finally {
       setLoading(false);
@@ -68,11 +68,11 @@ export default function AdminExpertManagement() {
         newStatus === 1
           ? t(
               "Expert activated successfully.",
-              "বিশেষজ্ঞকে সফলভাবে সক্রিয় করা হয়েছে।"
+              "à¦¬à¦¿à¦¶à§‡à¦·à¦œà§à¦žà¦•à§‡ à¦¸à¦«à¦²à¦­à¦¾à¦¬à§‡ à¦¸à¦•à§à¦°à¦¿à§Ÿ à¦•à¦°à¦¾ à¦¹à§Ÿà§‡à¦›à§‡à¥¤"
             )
           : t(
               "Expert deactivated successfully.",
-              "বিশেষজ্ঞকে সফলভাবে নিষ্ক্রিয় করা হয়েছে।"
+              "à¦¬à¦¿à¦¶à§‡à¦·à¦œà§à¦žà¦•à§‡ à¦¸à¦«à¦²à¦­à¦¾à¦¬à§‡ à¦¨à¦¿à¦·à§à¦•à§à¦°à¦¿à§Ÿ à¦•à¦°à¦¾ à¦¹à§Ÿà§‡à¦›à§‡à¥¤"
             )
       );
 
@@ -80,7 +80,7 @@ export default function AdminExpertManagement() {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          t("Status update failed.", "স্ট্যাটাস পরিবর্তন করা যায়নি।")
+          t("Status update failed.", "à¦¸à§à¦Ÿà§à¦¯à¦¾à¦Ÿà¦¾à¦¸ à¦ªà¦°à¦¿à¦¬à¦°à§à¦¤à¦¨ à¦•à¦°à¦¾ à¦¯à¦¾à§Ÿà¦¨à¦¿à¥¤")
       );
     } finally {
       setProcessingId(null);
@@ -91,7 +91,7 @@ export default function AdminExpertManagement() {
     const confirmed = window.confirm(
       t(
         `Are you sure you want to remove ${expert.full_name}?`,
-        `আপনি কি ${expert.full_name} নামের বিশেষজ্ঞকে সরাতে চান?`
+        `à¦†à¦ªà¦¨à¦¿ à¦•à¦¿ ${expert.full_name} à¦¨à¦¾à¦®à§‡à¦° à¦¬à¦¿à¦¶à§‡à¦·à¦œà§à¦žà¦•à§‡ à¦¸à¦°à¦¾à¦¤à§‡ à¦šà¦¾à¦¨?`
       )
     );
 
@@ -107,7 +107,7 @@ export default function AdminExpertManagement() {
       setMessage(
         t(
           "Expert removed successfully.",
-          "বিশেষজ্ঞকে সফলভাবে সরানো হয়েছে।"
+          "à¦¬à¦¿à¦¶à§‡à¦·à¦œà§à¦žà¦•à§‡ à¦¸à¦«à¦²à¦­à¦¾à¦¬à§‡ à¦¸à¦°à¦¾à¦¨à§‹ à¦¹à§Ÿà§‡à¦›à§‡à¥¤"
         )
       );
 
@@ -115,7 +115,7 @@ export default function AdminExpertManagement() {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          t("Unable to remove expert.", "বিশেষজ্ঞকে সরানো যায়নি।")
+          t("Unable to remove expert.", "à¦¬à¦¿à¦¶à§‡à¦·à¦œà§à¦žà¦•à§‡ à¦¸à¦°à¦¾à¦¨à§‹ à¦¯à¦¾à§Ÿà¦¨à¦¿à¥¤")
       );
     } finally {
       setProcessingId(null);
@@ -149,7 +149,7 @@ export default function AdminExpertManagement() {
   if (loading) {
     return (
       <div style={styles.loading}>
-        {t("Loading experts...", "বিশেষজ্ঞদের তথ্য লোড হচ্ছে...")}
+        {t("Loading experts...", "à¦¬à¦¿à¦¶à§‡à¦·à¦œà§à¦žà¦¦à§‡à¦° à¦¤à¦¥à§à¦¯ à¦²à§‹à¦¡ à¦¹à¦šà§à¦›à§‡...")}
       </div>
     );
   }
@@ -159,13 +159,13 @@ export default function AdminExpertManagement() {
       <div style={styles.header}>
         <div>
           <h2 style={styles.title}>
-            {t("Expert Management", "বিশেষজ্ঞ ব্যবস্থাপনা")}
+            {t("Expert Management", "à¦¬à¦¿à¦¶à§‡à¦·à¦œà§à¦ž à¦¬à§à¦¯à¦¬à¦¸à§à¦¥à¦¾à¦ªà¦¨à¦¾")}
           </h2>
 
           <p style={styles.subtitle}>
             {t(
               "View, activate, deactivate and remove experts.",
-              "বিশেষজ্ঞদের তথ্য দেখুন, সক্রিয় বা নিষ্ক্রিয় করুন এবং সরিয়ে দিন।"
+              "à¦¬à¦¿à¦¶à§‡à¦·à¦œà§à¦žà¦¦à§‡à¦° à¦¤à¦¥à§à¦¯ à¦¦à§‡à¦–à§à¦¨, à¦¸à¦•à§à¦°à¦¿à§Ÿ à¦¬à¦¾ à¦¨à¦¿à¦·à§à¦•à§à¦°à¦¿à§Ÿ à¦•à¦°à§à¦¨ à¦à¦¬à¦‚ à¦¸à¦°à¦¿à§Ÿà§‡ à¦¦à¦¿à¦¨à¥¤"
             )}
           </p>
         </div>
@@ -175,7 +175,7 @@ export default function AdminExpertManagement() {
           style={styles.refreshButton}
           disabled={loading}
         >
-          {t("Refresh", "রিফ্রেশ")}
+          {t("Refresh", "à¦°à¦¿à¦«à§à¦°à§‡à¦¶")}
         </button>
       </div>
 
@@ -197,40 +197,40 @@ export default function AdminExpertManagement() {
         onChange={(e) => setSearch(e.target.value)}
         placeholder={t(
           "Search by name, phone or expertise...",
-          "নাম, ফোন অথবা বিশেষজ্ঞতার মাধ্যমে খুঁজুন..."
+          "à¦¨à¦¾à¦®, à¦«à§‹à¦¨ à¦…à¦¥à¦¬à¦¾ à¦¬à¦¿à¦¶à§‡à¦·à¦œà§à¦žà¦¤à¦¾à¦° à¦®à¦¾à¦§à§à¦¯à¦®à§‡ à¦–à§à¦à¦œà§à¦¨..."
         )}
-        aria-label={t("Search experts", "বিশেষজ্ঞ খুঁজুন")}
+        aria-label={t("Search experts", "à¦¬à¦¿à¦¶à§‡à¦·à¦œà§à¦ž à¦–à§à¦à¦œà§à¦¨")}
       />
 
       <div style={styles.summary}>
         <div style={styles.summaryCard}>
           <strong>{experts.length}</strong>
-          <span>{t("Total Experts", "মোট বিশেষজ্ঞ")}</span>
+          <span>{t("Total Experts", "à¦®à§‹à¦Ÿ à¦¬à¦¿à¦¶à§‡à¦·à¦œà§à¦ž")}</span>
         </div>
 
         <div style={styles.summaryCard}>
           <strong>{activeCount}</strong>
-          <span>{t("Active Experts", "সক্রিয় বিশেষজ্ঞ")}</span>
+          <span>{t("Active Experts", "à¦¸à¦•à§à¦°à¦¿à§Ÿ à¦¬à¦¿à¦¶à§‡à¦·à¦œà§à¦ž")}</span>
         </div>
 
         <div style={styles.summaryCard}>
           <strong>{inactiveCount}</strong>
-          <span>{t("Inactive Experts", "নিষ্ক্রিয় বিশেষজ্ঞ")}</span>
+          <span>{t("Inactive Experts", "à¦¨à¦¿à¦·à§à¦•à§à¦°à¦¿à§Ÿ à¦¬à¦¿à¦¶à§‡à¦·à¦œà§à¦ž")}</span>
         </div>
       </div>
 
       {filteredExperts.length === 0 ? (
         <div style={styles.empty}>
-          <h3>{t("No experts found", "কোনো বিশেষজ্ঞ পাওয়া যায়নি")}</h3>
+          <h3>{t("No experts found", "à¦•à§‹à¦¨à§‹ à¦¬à¦¿à¦¶à§‡à¦·à¦œà§à¦ž à¦ªà¦¾à¦“à§Ÿà¦¾ à¦¯à¦¾à§Ÿà¦¨à¦¿")}</h3>
           <p>
             {search
               ? t(
                   "Try another search term.",
-                  "অন্য কোনো শব্দ দিয়ে খুঁজে দেখুন।"
+                  "à¦…à¦¨à§à¦¯ à¦•à§‹à¦¨à§‹ à¦¶à¦¬à§à¦¦ à¦¦à¦¿à§Ÿà§‡ à¦–à§à¦à¦œà§‡ à¦¦à§‡à¦–à§à¦¨à¥¤"
                 )
               : t(
                   "No experts have been added yet.",
-                  "এখনো কোনো বিশেষজ্ঞ যোগ করা হয়নি।"
+                  "à¦à¦–à¦¨à§‹ à¦•à§‹à¦¨à§‹ à¦¬à¦¿à¦¶à§‡à¦·à¦œà§à¦ž à¦¯à§‹à¦— à¦•à¦°à¦¾ à¦¹à§Ÿà¦¨à¦¿à¥¤"
                 )}
           </p>
         </div>
@@ -239,13 +239,13 @@ export default function AdminExpertManagement() {
           <table style={styles.table}>
             <thead>
               <tr>
-                <th style={styles.th}>{t("Name", "নাম")}</th>
-                <th style={styles.th}>{t("Phone", "ফোন")}</th>
-                <th style={styles.th}>{t("Expertise", "বিশেষজ্ঞতা")}</th>
-                <th style={styles.th}>{t("Qualification", "যোগ্যতা")}</th>
-                <th style={styles.th}>{t("Experience", "অভিজ্ঞতা")}</th>
-                <th style={styles.th}>{t("Status", "স্ট্যাটাস")}</th>
-                <th style={styles.th}>{t("Actions", "কার্যক্রম")}</th>
+                <th style={styles.th}>{t("Name", "à¦¨à¦¾à¦®")}</th>
+                <th style={styles.th}>{t("Phone", "à¦«à§‹à¦¨")}</th>
+                <th style={styles.th}>{t("Expertise", "à¦¬à¦¿à¦¶à§‡à¦·à¦œà§à¦žà¦¤à¦¾")}</th>
+                <th style={styles.th}>{t("Qualification", "à¦¯à§‹à¦—à§à¦¯à¦¤à¦¾")}</th>
+                <th style={styles.th}>{t("Experience", "à¦…à¦­à¦¿à¦œà§à¦žà¦¤à¦¾")}</th>
+                <th style={styles.th}>{t("Status", "à¦¸à§à¦Ÿà§à¦¯à¦¾à¦Ÿà¦¾à¦¸")}</th>
+                <th style={styles.th}>{t("Actions", "à¦•à¦¾à¦°à§à¦¯à¦•à§à¦°à¦®")}</th>
               </tr>
             </thead>
 
@@ -277,7 +277,7 @@ export default function AdminExpertManagement() {
 
                     <td style={styles.td}>
                       {expert.experience_years ?? 0}{" "}
-                      {t("years", "বছর")}
+                      {t("years", "à¦¬à¦›à¦°")}
                     </td>
 
                     <td style={styles.td}>
@@ -289,8 +289,8 @@ export default function AdminExpertManagement() {
                         }}
                       >
                         {active
-                          ? t("Active", "সক্রিয়")
-                          : t("Inactive", "নিষ্ক্রিয়")}
+                          ? t("Active", "à¦¸à¦•à§à¦°à¦¿à§Ÿ")
+                          : t("Inactive", "à¦¨à¦¿à¦·à§à¦•à§à¦°à¦¿à§Ÿ")}
                       </span>
                     </td>
 
@@ -306,10 +306,10 @@ export default function AdminExpertManagement() {
                           }}
                         >
                           {processing
-                            ? t("Please wait...", "অপেক্ষা করুন...")
+                            ? t("Please wait...", "à¦…à¦ªà§‡à¦•à§à¦·à¦¾ à¦•à¦°à§à¦¨...")
                             : active
-                              ? t("Deactivate", "নিষ্ক্রিয় করুন")
-                              : t("Activate", "সক্রিয় করুন")}
+                              ? t("Deactivate", "à¦¨à¦¿à¦·à§à¦•à§à¦°à¦¿à§Ÿ à¦•à¦°à§à¦¨")
+                              : t("Activate", "à¦¸à¦•à§à¦°à¦¿à§Ÿ à¦•à¦°à§à¦¨")}
                         </button>
 
                         <button
@@ -321,7 +321,7 @@ export default function AdminExpertManagement() {
                             opacity: processing ? 0.6 : 1,
                           }}
                         >
-                          {t("Remove", "সরিয়ে দিন")}
+                          {t("Remove", "à¦¸à¦°à¦¿à§Ÿà§‡ à¦¦à¦¿à¦¨")}
                         </button>
                       </div>
                     </td>
@@ -497,3 +497,4 @@ const styles = {
     borderRadius: 9,
   },
 };
+
