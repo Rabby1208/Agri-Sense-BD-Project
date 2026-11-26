@@ -1898,3 +1898,17 @@ body {
   margin-left: 0 !important;
   margin-right: auto !important;
 }
+
+/* FIX: Remove public navbar spacing from Expert Dashboard */
+body:has(.expert-dashboard) {
+  padding-top: 0 !important;
+}
+
+body:has(.expert-dashboard) .expert-dashboard {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+body:has(.expert-dashboard) .expert-sidebar {
+  top: 0 !important;
+}
