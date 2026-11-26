@@ -14,9 +14,11 @@ const farmerRoutes = require("./routes/farmerRoutes");
 const financeRoutes = require("./routes/financeRoutes");
 const cropSalesRoutes = require("./routes/cropSalesRoutes");
 const marketplaceRoutes = require("./routes/marketplaceRoutes");
+
 const adminRoutes = require("./routes/adminRoutes");
 const adminExpertRoutes = require("./routes/adminExpertRoutes");
 const expertRoutes = require("./routes/expertRoutes");
+
 const farmingExpenseRoutes = require("./routes/farmingExpenseRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 
@@ -56,7 +58,10 @@ app.use("/api/finance", financeRoutes);
 
 app.use("/api/disease-detection", diseaseDetectionRoutes);
 
-// History aliases
+// ==========================================
+// DISEASE HISTORY
+// ==========================================
+
 app.use(
   "/api/farmer/disease-history",
   farmerDiseaseHistoryRoutes
