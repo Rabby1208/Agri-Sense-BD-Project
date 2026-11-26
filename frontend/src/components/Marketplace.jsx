@@ -1,4 +1,4 @@
-﻿
+
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -19,60 +19,60 @@ import "./Marketplace.css";
 const API_URL = (import.meta.env.VITE_BACKEND_API_URL || "http://127.0.0.1:5000/api").replace(/\/$/, "");
 
 const cropTranslations = {
-  rice: "à¦§à¦¾à¦¨",
-  paddy: "à¦§à¦¾à¦¨",
-  "boro rice": "à¦¬à§‹à¦°à§‹ à¦§à¦¾à¦¨",
-  "aman rice": "à¦†à¦®à¦¨ à¦§à¦¾à¦¨",
-  "aus rice": "à¦†à¦‰à¦¶ à¦§à¦¾à¦¨",
-  wheat: "à¦—à¦®",
-  tomato: "à¦Ÿà¦®à§‡à¦Ÿà§‹",
-  potato: "à¦†à¦²à§",
-  onion: "à¦ªà§‡à¦à¦¯à¦¼à¦¾à¦œ",
-  garlic: "à¦°à¦¸à§à¦¨",
-  brinjal: "à¦¬à§‡à¦—à§à¦¨",
-  eggplant: "à¦¬à§‡à¦—à§à¦¨",
-  chili: "à¦®à¦°à¦¿à¦š",
-  chilli: "à¦®à¦°à¦¿à¦š",
-  maize: "à¦­à§à¦Ÿà§à¦Ÿà¦¾",
-  corn: "à¦­à§à¦Ÿà§à¦Ÿà¦¾",
-  mustard: "à¦¸à¦°à¦¿à¦·à¦¾",
-  cucumber: "à¦¶à¦¸à¦¾",
-  pumpkin: "à¦®à¦¿à¦·à§à¦Ÿà¦¿ à¦•à§à¦®à¦¡à¦¼à¦¾",
-  "bitter gourd": "à¦•à¦°à¦²à¦¾",
-  "bottle gourd": "à¦²à¦¾à¦‰",
-  "snake gourd": "à¦šà¦¿à¦šà¦¿à¦™à§à¦—à¦¾",
-  cabbage: "à¦¬à¦¾à¦à¦§à¦¾à¦•à¦ªà¦¿",
-  cauliflower: "à¦«à§à¦²à¦•à¦ªà¦¿",
-  carrot: "à¦—à¦¾à¦œà¦°",
-  radish: "à¦®à§‚à¦²à¦¾",
-  spinach: "à¦ªà¦¾à¦²à¦‚ à¦¶à¦¾à¦•",
-  "red amaranth": "à¦²à¦¾à¦² à¦¶à¦¾à¦•",
-  okra: "à¦¢à§‡à¦à¦¡à¦¼à¦¸",
-  "lady finger": "à¦¢à§‡à¦à¦¡à¦¼à¦¸",
-  papaya: "à¦ªà§‡à¦à¦ªà§‡",
-  banana: "à¦•à¦²à¦¾",
-  mango: "à¦†à¦®",
-  jackfruit: "à¦•à¦¾à¦à¦ à¦¾à¦²",
-  guava: "à¦ªà§‡à¦¯à¦¼à¦¾à¦°à¦¾",
-  lentil: "à¦®à¦¸à§à¦° à¦¡à¦¾à¦²",
-  "red lentil": "à¦®à¦¸à§à¦° à¦¡à¦¾à¦²",
-  chickpea: "à¦›à§‹à¦²à¦¾",
-  mung: "à¦®à§à¦— à¦¡à¦¾à¦²",
-  "mung bean": "à¦®à§à¦— à¦¡à¦¾à¦²",
-  "black gram": "à¦®à¦¾à¦·à¦•à¦²à¦¾à¦‡",
-  groundnut: "à¦šà¦¿à¦¨à¦¾à¦¬à¦¾à¦¦à¦¾à¦®",
-  peanut: "à¦šà¦¿à¦¨à¦¾à¦¬à¦¾à¦¦à¦¾à¦®",
-  sugarcane: "à¦†à¦–",
-  jute: "à¦ªà¦¾à¦Ÿ",
-  cotton: "à¦¤à§à¦²à¦¾",
-  sunflower: "à¦¸à§‚à¦°à§à¦¯à¦®à§à¦–à§€",
-  watermelon: "à¦¤à¦°à¦®à§à¦œ",
-  lemon: "à¦²à§‡à¦¬à§",
-  coriander: "à¦§à¦¨à¦¿à¦¯à¦¼à¦¾",
-  ginger: "à¦†à¦¦à¦¾",
-  turmeric: "à¦¹à¦²à§à¦¦",
-  sweetpotato: "à¦®à¦¿à¦·à§à¦Ÿà¦¿ à¦†à¦²à§",
-  "sweet potato": "à¦®à¦¿à¦·à§à¦Ÿà¦¿ à¦†à¦²à§"
+  rice: "ধান",
+  paddy: "ধান",
+  "boro rice": "বোরো ধান",
+  "aman rice": "আমন ধান",
+  "aus rice": "আউশ ধান",
+  wheat: "গম",
+  tomato: "টমেটো",
+  potato: "আলু",
+  onion: "পেঁয়াজ",
+  garlic: "রসুন",
+  brinjal: "বেগুন",
+  eggplant: "বেগুন",
+  chili: "মরিচ",
+  chilli: "মরিচ",
+  maize: "ভুট্টা",
+  corn: "ভুট্টা",
+  mustard: "সরিষা",
+  cucumber: "শসা",
+  pumpkin: "মিষ্টি কুমড়া",
+  "bitter gourd": "করলা",
+  "bottle gourd": "লাউ",
+  "snake gourd": "চিচিঙ্গা",
+  cabbage: "বাঁধাকপি",
+  cauliflower: "ফুলকপি",
+  carrot: "গাজর",
+  radish: "মূলা",
+  spinach: "পালং শাক",
+  "red amaranth": "লাল শাক",
+  okra: "ঢেঁড়স",
+  "lady finger": "ঢেঁড়স",
+  papaya: "পেঁপে",
+  banana: "কলা",
+  mango: "আম",
+  jackfruit: "কাঁঠাল",
+  guava: "পেয়ারা",
+  lentil: "মসুর ডাল",
+  "red lentil": "মসুর ডাল",
+  chickpea: "ছোলা",
+  mung: "মুগ ডাল",
+  "mung bean": "মুগ ডাল",
+  "black gram": "মাষকলাই",
+  groundnut: "চিনাবাদাম",
+  peanut: "চিনাবাদাম",
+  sugarcane: "আখ",
+  jute: "পাট",
+  cotton: "তুলা",
+  sunflower: "সূর্যমুখী",
+  watermelon: "তরমুজ",
+  lemon: "লেবু",
+  coriander: "ধনিয়া",
+  ginger: "আদা",
+  turmeric: "হলুদ",
+  sweetpotato: "মিষ্টি আলু",
+  "sweet potato": "মিষ্টি আলু"
 };
 
 function Marketplace() {
@@ -86,7 +86,7 @@ function Marketplace() {
 
   const translateCropName = (name) => {
     if (!name) {
-      return tx("Unnamed Crop", "à¦¨à¦¾à¦®à¦¹à§€à¦¨ à¦«à¦¸à¦²");
+      return tx("Unnamed Crop", "নামহীন ফসল");
     }
 
     if (!isBangla) {
@@ -190,14 +190,14 @@ function Marketplace() {
             <h2>
               {tx(
                 "Farmer's Crop Marketplace",
-                "à¦•à§ƒà¦·à¦•à§‡à¦° à¦«à¦¸à¦²à§‡à¦° à¦¬à¦¾à¦œà¦¾à¦°"
+                "কৃষকের ফসলের বাজার"
               )}
             </h2>
 
             <p>
               {tx(
                 "Explore available agricultural products and discover crop prices from farmers.",
-                "à¦¬à¦¿à¦­à¦¿à¦¨à§à¦¨ à¦•à§ƒà¦·à¦¿à¦ªà¦£à§à¦¯ à¦¦à§‡à¦–à§à¦¨ à¦à¦¬à¦‚ à¦•à§ƒà¦·à¦•à¦¦à§‡à¦° à¦•à¦¾à¦› à¦¥à§‡à¦•à§‡ à¦«à¦¸à¦²à§‡à¦° à¦¬à¦¾à¦œà¦¾à¦°à¦¦à¦° à¦œà¦¾à¦¨à§à¦¨à¥¤"
+                "বিভিন্ন কৃষিপণ্য দেখুন এবং কৃষকদের কাছ থেকে ফসলের বাজারদর জানুন।"
               )}
             </p>
           </div>
@@ -210,7 +210,7 @@ function Marketplace() {
             <div>
               <strong>{formatQuantity(listings.length)}</strong>
               <span>
-                {tx("Available Listings", "à¦‰à¦ªà¦²à¦¬à§à¦§ à¦ªà¦£à§à¦¯")}
+                {tx("Available Listings", "উপলব্ধ পণ্য")}
               </span>
             </div>
           </div>
@@ -228,7 +228,7 @@ function Marketplace() {
               type="text"
               placeholder={tx(
                 "Search crop name...",
-                "à¦«à¦¸à¦²à§‡à¦° à¦¨à¦¾à¦® à¦²à¦¿à¦–à§à¦¨..."
+                "ফসলের নাম লিখুন..."
               )}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
@@ -242,7 +242,7 @@ function Marketplace() {
               type="text"
               placeholder={tx(
                 "Search district...",
-                "à¦œà§‡à¦²à¦¾à¦° à¦¨à¦¾à¦® à¦²à¦¿à¦–à§à¦¨..."
+                "জেলার নাম লিখুন..."
               )}
               value={district}
               onChange={(event) => setDistrict(event.target.value)}
@@ -255,7 +255,7 @@ function Marketplace() {
             disabled={loading}
           >
             <Search size={17} />
-            {tx("Search", "à¦–à§à¦à¦œà§à¦¨")}
+            {tx("Search", "খুঁজুন")}
           </button>
 
           <button
@@ -265,7 +265,7 @@ function Marketplace() {
             disabled={loading}
           >
             <RefreshCw size={17} />
-            {tx("Reset", "à¦°à¦¿à¦¸à§‡à¦Ÿ")}
+            {tx("Reset", "রিসেট")}
           </button>
         </form>
 
@@ -274,11 +274,11 @@ function Marketplace() {
           <div>
             <span className="marketplace-section-label">
               <SlidersHorizontal size={15} />
-              {tx("EXPLORE PRODUCTS", "à¦ªà¦£à§à¦¯ à¦¦à§‡à¦–à§à¦¨")}
+              {tx("EXPLORE PRODUCTS", "পণ্য দেখুন")}
             </span>
 
             <h3>
-              {tx("Available Crops", "à¦‰à¦ªà¦²à¦¬à§à¦§ à¦«à¦¸à¦²")}
+              {tx("Available Crops", "উপলব্ধ ফসল")}
             </h3>
           </div>
 
@@ -287,13 +287,13 @@ function Marketplace() {
             className="marketplace-refresh-button"
             onClick={() => fetchListings()}
             disabled={loading}
-            title={tx("Refresh listings", "à¦¤à¦¾à¦²à¦¿à¦•à¦¾ à¦°à¦¿à¦«à§à¦°à§‡à¦¶ à¦•à¦°à§à¦¨")}
+            title={tx("Refresh listings", "তালিকা রিফ্রেশ করুন")}
           >
             <RefreshCw
               size={17}
               className={loading ? "marketplace-spin" : ""}
             />
-            {tx("Refresh", "à¦°à¦¿à¦«à§à¦°à§‡à¦¶")}
+            {tx("Refresh", "রিফ্রেশ")}
           </button>
         </div>
 
@@ -308,14 +308,14 @@ function Marketplace() {
             <h3>
               {tx(
                 "Loading marketplace...",
-                "à¦¬à¦¾à¦œà¦¾à¦°à§‡à¦° à¦¤à¦¥à§à¦¯ à¦²à§‹à¦¡ à¦¹à¦šà§à¦›à§‡..."
+                "বাজারের তথ্য লোড হচ্ছে..."
               )}
             </h3>
 
             <p>
               {tx(
                 "Please wait while we load available crop listings.",
-                "à¦‰à¦ªà¦²à¦¬à§à¦§ à¦«à¦¸à¦²à§‡à¦° à¦¤à¦¾à¦²à¦¿à¦•à¦¾ à¦²à§‹à¦¡ à¦¹à¦“à§Ÿà¦¾ à¦ªà¦°à§à¦¯à¦¨à§à¦¤ à¦…à¦ªà§‡à¦•à§à¦·à¦¾ à¦•à¦°à§à¦¨à¥¤"
+                "উপলব্ধ ফসলের তালিকা লোড হওয়া পর্যন্ত অপেক্ষা করুন।"
               )}
             </p>
           </div>
@@ -329,7 +329,7 @@ function Marketplace() {
             <h3>
               {tx(
                 "Unable to load marketplace",
-                "à¦¬à¦¾à¦œà¦¾à¦°à§‡à¦° à¦¤à¦¥à§à¦¯ à¦²à§‹à¦¡ à¦•à¦°à¦¾ à¦¯à¦¾à¦šà§à¦›à§‡ à¦¨à¦¾"
+                "বাজারের তথ্য লোড করা যাচ্ছে না"
               )}
             </h3>
 
@@ -341,7 +341,7 @@ function Marketplace() {
               className="marketplace-search-button"
             >
               <RefreshCw size={17} />
-              {tx("Try Again", "à¦†à¦¬à¦¾à¦° à¦šà§‡à¦·à§à¦Ÿà¦¾ à¦•à¦°à§à¦¨")}
+              {tx("Try Again", "আবার চেষ্টা করুন")}
             </button>
           </div>
         )}
@@ -356,14 +356,14 @@ function Marketplace() {
             <h3>
               {tx(
                 "No Crop Listings Available",
-                "à¦•à§‹à¦¨à§‹ à¦«à¦¸à¦²à§‡à¦° à¦¤à¦¾à¦²à¦¿à¦•à¦¾ à¦ªà¦¾à¦“à§Ÿà¦¾ à¦¯à¦¾à§Ÿà¦¨à¦¿"
+                "কোনো ফসলের তালিকা পাওয়া যায়নি"
               )}
             </h3>
 
             <p>
               {tx(
                 "No active crop listings were found. Please check again later or try another search.",
-                "à¦•à§‹à¦¨à§‹ à¦¸à¦•à§à¦°à¦¿à§Ÿ à¦«à¦¸à¦²à§‡à¦° à¦¤à¦¾à¦²à¦¿à¦•à¦¾ à¦ªà¦¾à¦“à§Ÿà¦¾ à¦¯à¦¾à§Ÿà¦¨à¦¿à¥¤ à¦ªà¦°à§‡ à¦†à¦¬à¦¾à¦° à¦šà§‡à¦·à§à¦Ÿà¦¾ à¦•à¦°à§à¦¨ à¦…à¦¥à¦¬à¦¾ à¦…à¦¨à§à¦¯ à¦•à¦¿à¦›à§ à¦–à§à¦à¦œà§à¦¨à¥¤"
+                "কোনো সক্রিয় ফসলের তালিকা পাওয়া যায়নি। পরে আবার চেষ্টা করুন অথবা অন্য কিছু খুঁজুন।"
               )}
             </p>
 
@@ -373,7 +373,7 @@ function Marketplace() {
               onClick={handleReset}
             >
               <RefreshCw size={17} />
-              {tx("Show All Listings", "à¦¸à¦¬ à¦ªà¦£à§à¦¯ à¦¦à§‡à¦–à§à¦¨")}
+              {tx("Show All Listings", "সব পণ্য দেখুন")}
             </button>
           </div>
         )}
@@ -401,12 +401,12 @@ function Marketplace() {
                       />
                     ) : (
                       <div className="marketplace-image-placeholder">
-                        <span>ðŸŒ¾</span>
+                        <span>🌾</span>
                       </div>
                     )}
 
                     <span className="marketplace-available-badge">
-                      {tx("Available", "à¦‰à¦ªà¦²à¦¬à§à¦§")}
+                      {tx("Available", "উপলব্ধ")}
                     </span>
                   </div>
 
@@ -415,7 +415,7 @@ function Marketplace() {
 
                     <div className="marketplace-price">
                       <strong>
-                        à§³{formatPrice(item.price_per_unit)}
+                        ৳{formatPrice(item.price_per_unit)}
                       </strong>
 
                       <span>
@@ -429,7 +429,7 @@ function Marketplace() {
                       <span>
                         {tx(
                           "Available quantity:",
-                          "à¦‰à¦ªà¦²à¦¬à§à¦§ à¦ªà¦°à¦¿à¦®à¦¾à¦£:"
+                          "উপলব্ধ পরিমাণ:"
                         )}{" "}
                         <strong>
                           {formatQuantity(
@@ -451,7 +451,7 @@ function Marketplace() {
                           item.location ||
                           tx(
                             "Location not specified",
-                            "à¦ à¦¿à¦•à¦¾à¦¨à¦¾ à¦‰à¦²à§à¦²à§‡à¦– à¦•à¦°à¦¾ à¦¹à§Ÿà¦¨à¦¿"
+                            "ঠিকানা উল্লেখ করা হয়নি"
                           )}
                       </span>
                     </div>
@@ -469,7 +469,7 @@ function Marketplace() {
                       </span>
 
                       <span className="marketplace-view-label">
-                        {tx("Public Listing", "à¦¸à¦°à§à¦¬à¦¸à¦¾à¦§à¦¾à¦°à¦£à§‡à¦° à¦¤à¦¾à¦²à¦¿à¦•à¦¾")}
+                        {tx("Public Listing", "সর্বসাধারণের তালিকা")}
                       </span>
                     </div>
                   </div>
@@ -487,14 +487,14 @@ function Marketplace() {
             <strong>
               {tx(
                 "Welcome to AgriSense BD Marketplace",
-                "AgriSense BD à¦¬à¦¾à¦œà¦¾à¦°à§‡ à¦¸à§à¦¬à¦¾à¦—à¦¤à¦®"
+                "AgriSense BD বাজারে স্বাগতম"
               )}
             </strong>
 
             <p>
               {tx(
                 "Visitors can explore crop listings and prices. Farmers can log in to manage their own crop listings from their dashboard.",
-                "à¦¸à¦•à¦² à¦¦à¦°à§à¦¶à¦¨à¦¾à¦°à§à¦¥à§€ à¦«à¦¸à¦²à§‡à¦° à¦¤à¦¾à¦²à¦¿à¦•à¦¾ à¦“ à¦¦à¦¾à¦® à¦¦à§‡à¦–à¦¤à§‡ à¦ªà¦¾à¦°à¦¬à§‡à¦¨à¥¤ à¦•à§ƒà¦·à¦•à¦°à¦¾ à¦²à¦—à¦‡à¦¨ à¦•à¦°à§‡ à¦¡à§à¦¯à¦¾à¦¶à¦¬à§‹à¦°à§à¦¡ à¦¥à§‡à¦•à§‡ à¦¨à¦¿à¦œà§‡à¦¦à§‡à¦° à¦«à¦¸à¦²à§‡à¦° à¦¤à¦¾à¦²à¦¿à¦•à¦¾ à¦ªà¦°à¦¿à¦šà¦¾à¦²à¦¨à¦¾ à¦•à¦°à¦¤à§‡ à¦ªà¦¾à¦°à¦¬à§‡à¦¨à¥¤"
+                "সকল দর্শনার্থী ফসলের তালিকা ও দাম দেখতে পারবেন। কৃষকরা লগইন করে ড্যাশবোর্ড থেকে নিজেদের ফসলের তালিকা পরিচালনা করতে পারবেন।"
               )}
             </p>
           </div>
@@ -506,4 +506,3 @@ function Marketplace() {
 }
 
 export default Marketplace;
-
