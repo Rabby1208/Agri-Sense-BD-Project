@@ -1,4 +1,4 @@
-﻿
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -33,6 +33,7 @@ import {
   getAvailableCrops,
   getMyCrops,
   addFarmerCrop,
+  updateFarmerCrop,
   deleteFarmerCrop,
   updateFarmerProfile,
 } from "../services/farmerApi";
@@ -171,6 +172,10 @@ const translateStatus = (status, isBangla) => {
   const normalized = String(status || "").toUpperCase();
 
   const translations = {
+    PLANNED: "পরিকল্পিত",
+    PLANTED: "রোপণ করা হয়েছে",
+    GROWING: "বেড়ে উঠছে",
+    HARVESTED: "ফসল সংগ্রহ সম্পন্ন",
     ACTIVE: "সক্রিয়",
     INACTIVE: "নিষ্ক্রিয়",
     COMPLETED: "সম্পন্ন",
@@ -242,6 +247,14 @@ function FarmerDashboard({ user, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [savingCrop, setSavingCrop] = useState(false);
+  const [editingCropId, setEditingCropId] = useState(null);
+  const [editCropForm, setEditCropForm] = useState({
+    land_area: "",
+    planting_date: "",
+    farming_status: "PLANNED",
+    notes: "",
+  });
+  const [savingCropUpdate, setSavingCropUpdate] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [deletingCropId, setDeletingCropId] = useState(null);
 
@@ -648,6 +661,138 @@ function FarmerDashboard({ user, onLogout }) {
     return crop.id || crop.farmer_crop_id || crop.crop_record_id;
   };
 
+  const startCropEdit = (crop) => {
+    const cropId = getCropId(crop);
+
+    if (!cropId) {
+      setError(L("Crop ID not found.", "ফসলের আইডি পাওয়া যায়নি।"));
+      return;
+    }
+
+    const currentStatus = String(getCropStatus(crop)).toUpperCase();
+
+    const allowedStatuses = [
+      "PLANNED",
+      "PLANTED",
+      "GROWING",
+      "HARVESTED",
+    ];
+
+    setEditingCropId(cropId);
+
+    setEditCropForm({
+      land_area: crop.land_area ?? "",
+      planting_date: crop.planting_date
+        ? String(crop.planting_date).slice(0, 10)
+        : "",
+      farming_status: allowedStatuses.includes(currentStatus)
+        ? currentStatus
+        : "PLANNED",
+      notes: crop.notes || "",
+    });
+
+    setError("");
+    setSuccess("");
+  };
+
+  const cancelCropEdit = () => {
+    setEditingCropId(null);
+    setEditCropForm({
+      land_area: "",
+      planting_date: "",
+      farming_status: "PLANNED",
+      notes: "",
+    });
+  };
+
+  const handleEditCropFormChange = (event) => {
+    const { name, value } = event.target;
+
+    setEditCropForm((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+  };
+
+  const handleUpdateCrop = async (event) => {
+    event.preventDefault();
+
+    if (!editingCropId) {
+      setError(L("Crop ID not found.", "ফসলের আইডি পাওয়া যায়নি।"));
+      return;
+    }
+
+    if (!editCropForm.land_area || Number(editCropForm.land_area) <= 0) {
+      setError(
+        L(
+          "Land area must be greater than zero.",
+          "জমির পরিমাণ শূন্যের বেশি হতে হবে।"
+        )
+      );
+      return;
+    }
+
+    if (!editCropForm.planting_date) {
+      setError(
+        L("Please select planting date.", "রোপণের তারিখ নির্বাচন করুন।")
+      );
+      return;
+    }
+
+    const allowedStatuses = [
+      "PLANNED",
+      "PLANTED",
+      "GROWING",
+      "HARVESTED",
+    ];
+
+    if (!allowedStatuses.includes(editCropForm.farming_status)) {
+      setError(
+        L(
+          "Please select a valid farming status.",
+          "সঠিক চাষের অবস্থা নির্বাচন করুন।"
+        )
+      );
+      return;
+    }
+
+    setSavingCropUpdate(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      await updateFarmerCrop(editingCropId, {
+        land_area: Number(editCropForm.land_area),
+        planting_date: editCropForm.planting_date,
+        farming_status: editCropForm.farming_status,
+        notes: editCropForm.notes,
+      });
+
+      setEditingCropId(null);
+
+      setSuccess(
+        L(
+          "Crop information updated successfully.",
+          "ফসলের তথ্য সফলভাবে আপডেট হয়েছে।"
+        )
+      );
+
+      await loadDashboard(false);
+    } catch (err) {
+      console.error("Crop Update Error:", err);
+
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          L(
+            "Could not update crop information.",
+            "ফসলের তথ্য আপডেট করা যায়নি।"
+          )
+      );
+    } finally {
+      setSavingCropUpdate(false);
+    }
+  };
   const handleDeleteCrop = async (crop) => {
     const cropId = getCropId(crop);
 
@@ -1278,6 +1423,91 @@ function FarmerDashboard({ user, onLogout }) {
                     </form>
                   )}
 
+                  {editingCropId !== null && (
+                    <form
+                      className="dashboard-form crop-form"
+                      onSubmit={handleUpdateCrop}
+                    >
+                      <h3>{L("Edit Crop Information", "ফসলের তথ্য সম্পাদনা")}</h3>
+
+                      <div className="form-grid">
+                        <div className="form-group">
+                          <label>{L("Land Area *", "জমির পরিমাণ *")}</label>
+                          <input
+                            type="number"
+                            name="land_area"
+                            min="0.01"
+                            step="0.01"
+                            value={editCropForm.land_area}
+                            onChange={handleEditCropFormChange}
+                            required
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label>{L("Planting Date *", "রোপণের তারিখ *")}</label>
+                          <input
+                            type="date"
+                            name="planting_date"
+                            value={editCropForm.planting_date}
+                            onChange={handleEditCropFormChange}
+                            required
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label>{L("Farming Status *", "চাষের অবস্থা *")}</label>
+                          <select
+                            name="farming_status"
+                            value={editCropForm.farming_status}
+                            onChange={handleEditCropFormChange}
+                            required
+                          >
+                            <option value="PLANNED">{L("Planned", "পরিকল্পিত")}</option>
+                            <option value="PLANTED">{L("Planted", "রোপণ করা হয়েছে")}</option>
+                            <option value="GROWING">{L("Growing", "বেড়ে উঠছে")}</option>
+                            <option value="HARVESTED">{L("Harvested", "ফসল সংগ্রহ সম্পন্ন")}</option>
+                          </select>
+                        </div>
+
+                        <div className="form-group full-width">
+                          <label>{L("Notes", "অতিরিক্ত তথ্য")}</label>
+                          <textarea
+                            name="notes"
+                            value={editCropForm.notes}
+                            onChange={handleEditCropFormChange}
+                            rows="3"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="form-actions">
+                        <button
+                          type="submit"
+                          className="primary-button"
+                          disabled={savingCropUpdate}
+                        >
+                          {savingCropUpdate ? (
+                            <LoaderCircle size={18} className="spin" />
+                          ) : (
+                            <Save size={18} />
+                          )}
+                          {savingCropUpdate
+                            ? L("Updating...", "আপডেট হচ্ছে...")
+                            : L("Save Changes", "পরিবর্তন সংরক্ষণ করুন")}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={cancelCropEdit}
+                          disabled={savingCropUpdate}
+                        >
+                          {L("Cancel", "বাতিল")}
+                        </button>
+                      </div>
+                    </form>
+                  )}
                   <div className="dashboard-panel">
                     {myCrops.length === 0 ? (
                       <div className="empty-state">
@@ -1332,6 +1562,16 @@ function FarmerDashboard({ user, onLogout }) {
                                     </span>
                                   </td>
                                   <td>
+                                    <button
+                                      type="button"
+                                      className="icon-button"
+                                      onClick={() => startCropEdit(crop)}
+                                      title={L("Edit crop", "ফসল সম্পাদনা")}
+                                      aria-label={L("Edit crop", "ফসল সম্পাদনা")}
+                                    >
+                                      <Pencil size={17} />
+                                    </button>
+
                                     <button
                                       type="button"
                                       className="icon-button danger"
