@@ -267,9 +267,11 @@ function getArray(response) {
 
   const candidates = [
     response?.listings,
+    response?.orders,
     response?.sales,
     response?.crops,
     response?.data?.listings,
+    response?.data?.orders,
     response?.data?.sales,
     response?.data?.crops,
     response?.data,
@@ -277,7 +279,6 @@ function getArray(response) {
 
   return candidates.find(Array.isArray) || [];
 }
-
 function getObject(response) {
   if (
     response?.data &&
@@ -384,6 +385,8 @@ function FarmerMarketplaceSales({ myCrops = [] }) {
   const [listings, setListings] = useState([]);
   const [sales, setSales] = useState([]);
   const [profitData, setProfitData] = useState({});
+  const [incomingOrders, setIncomingOrders] = useState([]);
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
 
   const [listingForm, setListingForm] = useState(listingInitial);
   const [saleForm, setSaleForm] = useState(saleInitial);
@@ -529,6 +532,7 @@ function FarmerMarketplaceSales({ myCrops = [] }) {
         request("/marketplace/my-listings"),
         request("/crop-sales"),
         request("/crop-sales/profit-loss"),
+        request("/orders/farmer-orders"),
       ]);
 
       const errors = [];
@@ -560,6 +564,15 @@ function FarmerMarketplaceSales({ myCrops = [] }) {
         console.error("Profit Loss Error:", results[2].reason);
       }
 
+      if (results[3].status === "fulfilled") {
+        setIncomingOrders(getArray(results[3].value));
+      } else {
+        errors.push(
+          `Orders: ${results[3].reason?.message || "Failed"}`
+        );
+        console.error("Farmer Orders Error:", results[3].reason);
+      }
+
       setError(errors.join(" | "));
       setLastUpdated(new Date());
     } catch (err) {
@@ -571,6 +584,40 @@ function FarmerMarketplaceSales({ myCrops = [] }) {
   }, [request, t.error]);
 
   // ======================================
+  // ======================================
+  // UPDATE MARKETPLACE ORDER STATUS
+  // ======================================
+
+  const updateOrderStatus = async (orderId, status) => {
+    if (!orderId || updatingOrderId !== null) return;
+
+    setUpdatingOrderId(orderId);
+    setError("");
+    setSuccess("");
+
+    try {
+      await request(`/orders/${orderId}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+
+      setSuccess(
+        isBn
+          ? "অর্ডারের অবস্থা সফলভাবে আপডেট হয়েছে।"
+          : "Order status updated successfully."
+      );
+
+      await loadData(true);
+    } catch (err) {
+      setError(
+        err.message ||
+        (isBn ? "অর্ডার আপডেট করা যায়নি।" : "Unable to update order.")
+      );
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
   // AUTO REFRESH
   // ======================================
 
@@ -1140,6 +1187,172 @@ function FarmerMarketplaceSales({ myCrops = [] }) {
               {showSaleForm ? t.close : t.recordSale}
             </button>
           </div>
+
+          {/* INCOMING MARKETPLACE ORDERS */}
+
+          <div className="fms-panel-heading" style={{ marginTop: "24px" }}>
+            <div>
+              <h3>
+                {isBn ? "ক্রেতার অর্ডার" : "Incoming Marketplace Orders"}
+              </h3>
+              <p>
+                {isBn
+                  ? "আপনার তালিকাভুক্ত ফসলের জন্য ক্রেতাদের অর্ডার।"
+                  : "Orders placed by buyers for your listed crops."}
+              </p>
+            </div>
+
+            <strong>{formatNumber(incomingOrders.length)}</strong>
+          </div>
+
+          {incomingOrders.length === 0 ? (
+            <div className="fms-empty">
+              <ShoppingBag size={30} />
+              <h3>
+                {isBn ? "এখনো কোনো অর্ডার নেই" : "No Incoming Orders"}
+              </h3>
+              <p>
+                {isBn
+                  ? "ক্রেতারা অর্ডার করলে এখানে দেখা যাবে।"
+                  : "New buyer orders will appear here."}
+              </p>
+            </div>
+          ) : (
+            <div className="fms-table-wrap">
+              <table className="fms-table">
+                <thead>
+                  <tr>
+                    <th>{isBn ? "অর্ডার" : "Order ID"}</th>
+                    <th>{t.crop}</th>
+                    <th>{t.buyer}</th>
+                    <th>{isBn ? "ফোন" : "Phone"}</th>
+                    <th>{t.quantity}</th>
+                    <th>{t.total}</th>
+                    <th>{isBn ? "ডেলিভারি ঠিকানা" : "Delivery Address"}</th>
+                    <th>{isBn ? "মন্তব্য" : "Buyer Note"}</th>
+                    <th>{t.orderDate}</th>
+                    <th>{t.status}</th>
+                    <th>{t.action}</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {incomingOrders.map((order) => {
+                    const status = String(
+                      order.status || "PENDING"
+                    ).toUpperCase();
+
+                    const busy = updatingOrderId === order.id;
+
+                    return (
+                      <tr key={order.id}>
+                        <td>#{order.id}</td>
+
+                        <td>
+                          {order.crop_name ||
+                            order.crop?.crop_name ||
+                            "—"}
+                        </td>
+
+                        <td>{order.buyer_name || "—"}</td>
+
+                        <td>{order.buyer_phone || "—"}</td>
+
+                        <td>
+                          {formatNumber(order.quantity)}{" "}
+                          {getUnit(order.unit)}
+                        </td>
+
+                        <td>{formatMoney(order.total_amount)}</td>
+
+                        <td>{order.delivery_address || "—"}</td>
+
+                        <td>{order.buyer_note || "—"}</td>
+
+                        <td>{formatDate(order.created_at)}</td>
+
+                        <td>
+                          {status === "PENDING"
+                            ? (isBn ? "অপেক্ষমাণ" : "PENDING")
+                            : status === "ACCEPTED"
+                              ? (isBn ? "গৃহীত" : "ACCEPTED")
+                              : status === "REJECTED"
+                                ? (isBn ? "বাতিল" : "REJECTED")
+                                : status === "COMPLETED"
+                                  ? (isBn ? "সম্পন্ন" : "COMPLETED")
+                                  : status}
+                        </td>
+
+                        <td>
+                          {status === "PENDING" && (
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: "6px",
+                                flexWrap: "wrap",
+                              }}
+                            >
+                              <button
+                                type="button"
+                                className="fms-primary"
+                                disabled={updatingOrderId !== null}
+                                onClick={() =>
+                                  updateOrderStatus(order.id, "ACCEPTED")
+                                }
+                              >
+                                {busy ? (
+                                  <LoaderCircle
+                                    size={15}
+                                    className="fms-spin"
+                                  />
+                                ) : (
+                                  isBn ? "গ্রহণ" : "Accept"
+                                )}
+                              </button>
+
+                              <button
+                                type="button"
+                                className="fms-delete"
+                                disabled={updatingOrderId !== null}
+                                onClick={() =>
+                                  updateOrderStatus(order.id, "REJECTED")
+                                }
+                              >
+                                {isBn ? "বাতিল" : "Reject"}
+                              </button>
+                            </div>
+                          )}
+
+                          {status === "ACCEPTED" && (
+                            <button
+                              type="button"
+                              className="fms-primary"
+                              disabled={updatingOrderId !== null}
+                              onClick={() =>
+                                updateOrderStatus(order.id, "COMPLETED")
+                              }
+                            >
+                              {busy ? (
+                                <LoaderCircle
+                                  size={15}
+                                  className="fms-spin"
+                                />
+                              ) : (
+                                isBn ? "সম্পন্ন করুন" : "Complete"
+                              )}
+                            </button>
+                          )}
+
+                          {(status === "REJECTED" ||
+                            status === "COMPLETED") && "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {showSaleForm && (
             <form
