@@ -48,7 +48,7 @@ import DemoMarketPrices from "./DemoMarketPrices";
 
 import "./FarmerDashboard.css";
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL || "http://127.0.0.1:5000/api";
+const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL || "https://agri-sense-bd-project.onrender.com/api";
 const REFRESH_INTERVAL = 5000;
 
 const initialCropForm = {
@@ -1604,4 +1604,5 @@ function FarmerDashboard({ user, onLogout }) {
 }
 
 export default FarmerDashboard;
+
 
