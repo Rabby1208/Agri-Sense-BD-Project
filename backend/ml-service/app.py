@@ -35,7 +35,6 @@ MODULE_NAME = "agrisense_model_inference"
 MODEL = None
 INFERENCE = None
 
-# Prevent simultaneous CPU-heavy model predictions.
 PREDICTION_LOCK = threading.Lock()
 
 
@@ -44,9 +43,11 @@ PREDICTION_LOCK = threading.Lock()
 # ==========================================
 
 def load_inference_module():
+
     global INFERENCE
 
     if not os.path.isfile(INFERENCE_PATH):
+
         raise FileNotFoundError(
             f"Local inference.py not found: {INFERENCE_PATH}"
         )
@@ -57,12 +58,15 @@ def load_inference_module():
     )
 
     if spec is None or spec.loader is None:
+
         raise RuntimeError(
             "Could not initialize local inference module."
         )
 
     INFERENCE = importlib.util.module_from_spec(spec)
+
     sys.modules[MODULE_NAME] = INFERENCE
+
     spec.loader.exec_module(INFERENCE)
 
     required_functions = [
@@ -73,33 +77,54 @@ def load_inference_module():
     ]
 
     for function_name in required_functions:
+
         if not hasattr(INFERENCE, function_name):
+
             raise RuntimeError(
                 f"Missing inference function: {function_name}"
             )
 
-    print("Local inference module loaded successfully.")
+    print(
+        "Local inference module loaded successfully.",
+        flush=True
+    )
 
 
 # ==========================================
-# LOAD MODELS
+# INITIALIZE MODEL MANAGER
 # ==========================================
 
 def load_inference_model():
+
     global MODEL
 
-    print("Loading AgriSense multi-model system...")
+    print(
+        "Initializing AgriSense lazy model system...",
+        flush=True
+    )
 
     load_inference_module()
 
+    # This initializes the manager only.
+    # Actual model weights load on first prediction.
     MODEL = INFERENCE.load_model()
 
     if MODEL is None:
-        raise RuntimeError("AgriSense models failed to load.")
 
-    print("AgriSense models loaded successfully.")
-    print("Model version:", MODEL.version)
-    print("Supported crops:", MODEL.crops)
+        raise RuntimeError(
+            "AgriSense model manager failed to initialize."
+        )
+
+    print(
+        "AgriSense model manager initialized.",
+        flush=True
+    )
+
+    print(
+        "Supported crops:",
+        MODEL.crops,
+        flush=True
+    )
 
 
 # ==========================================
@@ -108,9 +133,15 @@ def load_inference_model():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+
     load_inference_model()
+
     yield
-    print("AgriSense ML service stopped.")
+
+    print(
+        "AgriSense ML service stopped.",
+        flush=True
+    )
 
 
 # ==========================================
@@ -120,10 +151,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="AgriSense BD ML Service",
     description=(
-        "Multi-model crop and plant health "
+        "Memory-optimized crop and plant health "
         "classification service."
     ),
-    version="2.0.0",
+    version="2.1.0",
     lifespan=lifespan
 )
 
@@ -151,11 +182,12 @@ app.add_middleware(
 
 @app.get("/")
 async def home():
+
     return {
         "success": True,
         "service": "AgriSense BD ML Service",
         "message": "ML service is running.",
-        "model_system": "Multi-model Transformers",
+        "model_system": "Lazy-loaded Multi-model Transformers",
         "docs": "/docs",
         "health": "/health"
     }
@@ -167,17 +199,49 @@ async def home():
 
 @app.get("/health")
 async def health_check():
+
+    manager_ready = MODEL is not None
+
+    active_model_loaded = (
+        MODEL.is_model_loaded
+        if manager_ready
+        else False
+    )
+
     return {
+
         "success": True,
+
         "service": "AgriSense BD ML Service",
-        "model_loaded": MODEL is not None,
+
+        # Manager initialization status.
+        # Actual model weights load on first prediction.
+        "model_loaded": manager_ready,
+
         "inference_loaded": INFERENCE is not None,
-        "model_version": (
-            MODEL.version if MODEL is not None else None
+
+        "active_model_loaded": active_model_loaded,
+
+        "loaded_model_group": (
+            MODEL.loaded_model_group
+            if manager_ready
+            else None
         ),
+
+        "model_version": (
+            MODEL.version
+            if manager_ready
+            else None
+        ),
+
         "supported_crops": (
-            MODEL.crops if MODEL is not None else []
-        )
+            MODEL.crops
+            if manager_ready
+            else []
+        ),
+
+        "loading_strategy": "one_model_group_at_a_time"
+
     }
 
 
@@ -188,6 +252,7 @@ async def health_check():
 async def validate_image(file: UploadFile):
 
     if file.content_type not in ALLOWED_CONTENT_TYPES:
+
         raise HTTPException(
             status_code=400,
             detail="Only JPG, PNG and WEBP images are allowed."
@@ -196,21 +261,25 @@ async def validate_image(file: UploadFile):
     image_bytes = await file.read()
 
     if not image_bytes:
+
         raise HTTPException(
             status_code=400,
             detail="Uploaded image is empty."
         )
 
     if len(image_bytes) > MAX_IMAGE_SIZE:
+
         raise HTTPException(
             status_code=413,
             detail="Image size must not exceed 5 MB."
         )
 
     try:
+
         with Image.open(BytesIO(image_bytes)) as image:
 
             if image.format not in ["JPEG", "PNG", "WEBP"]:
+
                 raise HTTPException(
                     status_code=400,
                     detail="Unsupported image format."
@@ -219,12 +288,14 @@ async def validate_image(file: UploadFile):
             width, height = image.size
 
             if width < 1 or height < 1:
+
                 raise HTTPException(
                     status_code=400,
                     detail="Invalid image dimensions."
                 )
 
             if width * height > MAX_IMAGE_PIXELS:
+
                 raise HTTPException(
                     status_code=400,
                     detail="Image dimensions are too large."
@@ -240,6 +311,7 @@ async def validate_image(file: UploadFile):
         OSError,
         Image.DecompressionBombError
     ):
+
         raise HTTPException(
             status_code=400,
             detail="Invalid or corrupted image."
@@ -253,18 +325,15 @@ async def validate_image(file: UploadFile):
 # ==========================================
 
 def predict_image_safely(image_bytes, selected_crop):
-    """
-    Run synchronous PyTorch inference outside the
-    FastAPI event loop.
-
-    The lock ensures that only one prediction uses
-    the loaded model at a time.
-    """
 
     if MODEL is None or INFERENCE is None:
-        raise RuntimeError("ML model is not available.")
+
+        raise RuntimeError(
+            "ML model manager is not available."
+        )
 
     with PREDICTION_LOCK:
+
         return INFERENCE.predict_image(
             image_bytes,
             MODEL,
@@ -279,14 +348,16 @@ def predict_image_safely(image_bytes, selected_crop):
 async def run_model_prediction(crop, image):
 
     if MODEL is None or INFERENCE is None:
+
         raise HTTPException(
             status_code=503,
-            detail="ML model is not available."
+            detail="ML model manager is not available."
         )
 
     selected_crop = crop.strip().lower()
 
     if selected_crop not in ALLOWED_CROPS:
+
         raise HTTPException(
             status_code=400,
             detail=(
@@ -298,7 +369,7 @@ async def run_model_prediction(crop, image):
     image_bytes = await validate_image(image)
 
     try:
-        # Run CPU-heavy inference in a worker thread.
+
         prediction = await run_in_threadpool(
             predict_image_safely,
             image_bytes,
@@ -306,6 +377,7 @@ async def run_model_prediction(crop, image):
         )
 
         if not isinstance(prediction, dict):
+
             raise ValueError(
                 "Invalid prediction response from model."
             )
@@ -327,12 +399,17 @@ async def run_model_prediction(crop, image):
             invalid_image_error is not None
             and isinstance(error, invalid_image_error)
         ):
+
             raise HTTPException(
                 status_code=400,
                 detail=str(error)
             )
 
-        print("Prediction Error:", repr(error))
+        print(
+            "Prediction Error:",
+            repr(error),
+            flush=True
+        )
 
         raise HTTPException(
             status_code=500,
@@ -347,18 +424,24 @@ async def run_model_prediction(crop, image):
 def get_dominant_crop(crop_probabilities):
 
     if not isinstance(crop_probabilities, dict):
+
         return None, None
 
     valid_probabilities = {
+
         crop_name: probability
+
         for crop_name, probability in crop_probabilities.items()
+
         if (
             isinstance(probability, (int, float))
             and not isinstance(probability, bool)
         )
+
     }
 
     if not valid_probabilities:
+
         return None, None
 
     dominant_crop = max(
@@ -366,7 +449,10 @@ def get_dominant_crop(crop_probabilities):
         key=valid_probabilities.get
     )
 
-    return dominant_crop, valid_probabilities[dominant_crop]
+    return (
+        dominant_crop,
+        valid_probabilities[dominant_crop]
+    )
 
 
 # ==========================================
@@ -397,33 +483,50 @@ def format_prediction(result, selected_crop):
             dominant_crop is not None
             and dominant_crop != selected_crop
         ):
+
             return {
+
                 "detection_status": "crop_mismatch",
+
                 "disease_detected": False,
+
                 "selected_crop": selected_crop,
+
                 "likely_crop": dominant_crop,
+
                 "likely_crop_probability": round(
                     float(dominant_probability), 4
                 ),
+
                 "confidence": confidence,
+
                 "message": (
                     f"You selected {selected_crop}, but the model "
                     f"leans toward {dominant_crop}. Please verify "
                     "the crop and upload a clear plant image."
                 ),
+
                 **common
+
             }
 
         return {
+
             "detection_status": "unknown",
+
             "disease_detected": False,
+
             "selected_crop": selected_crop,
+
             "confidence": confidence,
+
             "message": result.get(
                 "message",
                 "The image could not be reliably identified."
             ),
+
             **common
+
         }
 
     if status == "uncertain":
@@ -432,27 +535,39 @@ def format_prediction(result, selected_crop):
             dominant_crop is not None
             and dominant_crop != selected_crop
         ):
+
             return {
+
                 "detection_status": "crop_mismatch",
+
                 "disease_detected": False,
+
                 "selected_crop": selected_crop,
+
                 "likely_crop": dominant_crop,
+
                 "likely_crop_probability": round(
                     float(dominant_probability), 4
                 ),
+
                 "confidence": confidence,
+
                 "message": (
                     "The model is leaning toward a different crop "
                     "than the one you selected. Please check the "
                     "selected crop and uploaded image."
                 ),
+
                 **common
+
             }
 
         possible_condition = None
         possible_confidence = None
 
-        top_predictions = result.get("top_predictions", [])
+        top_predictions = result.get(
+            "top_predictions", []
+        )
 
         if isinstance(top_predictions, list):
 
@@ -467,25 +582,41 @@ def format_prediction(result, selected_crop):
                     isinstance(class_id, str)
                     and class_id.startswith(selected_crop + "|")
                 ):
-                    possible_condition = item.get("display_name")
-                    possible_confidence = item.get("confidence")
+
+                    possible_condition = item.get(
+                        "display_name"
+                    )
+
+                    possible_confidence = item.get(
+                        "confidence"
+                    )
+
                     break
 
         response = {
+
             "detection_status": "uncertain",
+
             "disease_detected": False,
+
             "crop": selected_crop,
+
             "confidence": confidence,
+
             "message": (
                 "The selected crop appears consistent with the model "
                 "prediction, but the disease could not be identified "
                 "with sufficient confidence."
             ),
+
             **common
+
         }
 
         if possible_condition:
+
             response["possible_condition"] = possible_condition
+
             response["possible_condition_confidence"] = (
                 possible_confidence
             )
@@ -493,11 +624,17 @@ def format_prediction(result, selected_crop):
         return response
 
     if status != "success":
+
         return {
+
             "detection_status": "unknown",
+
             "disease_detected": False,
+
             "message": "No reliable prediction is available.",
+
             **common
+
         }
 
     predicted_crop = result.get("crop")
@@ -506,59 +643,91 @@ def format_prediction(result, selected_crop):
     is_healthy = result.get("is_healthy")
 
     if not isinstance(predicted_crop, str):
-        raise ValueError("Model did not return a valid crop.")
+
+        raise ValueError(
+            "Model did not return a valid crop."
+        )
 
     predicted_crop = predicted_crop.lower()
 
     if predicted_crop != selected_crop:
+
         return {
+
             "detection_status": "crop_mismatch",
+
             "disease_detected": False,
+
             "selected_crop": selected_crop,
+
             "predicted_crop": predicted_crop,
+
             "message": (
                 "The detected crop does not match "
                 "the selected crop. Please check your selection."
             ),
+
             **common
+
         }
 
     if is_healthy is True:
+
         return {
+
             "detection_status": "success",
+
             "disease_detected": False,
+
             "plant_health": "healthy",
+
             "crop": predicted_crop,
+
             "plant_part": organ,
+
             "confidence": confidence,
+
             "message": (
                 "The model classified this image "
                 "as a healthy plant condition."
             ),
+
             **common
+
         }
 
     if not isinstance(condition, str) or not condition:
+
         raise ValueError(
             "Model did not return a valid disease condition."
         )
 
     return {
+
         "detection_status": "success",
+
         "disease_detected": True,
+
         "crop": predicted_crop,
+
         "plant_part": organ,
+
         "disease": condition.replace(
             "_", " "
         ).title(),
+
         "confidence": confidence,
+
         "message": "A possible disease condition was identified.",
+
         "disclaimer": (
             "This is an AI-generated estimate, not a confirmed "
             "plant diagnosis. Consult a qualified agricultural "
             "expert before making treatment decisions."
         ),
+
         **common
+
     }
 
 
@@ -583,9 +752,13 @@ async def predict_disease(
     )
 
     return {
+
         "success": True,
+
         "selected_crop": selected_crop,
+
         **formatted_result
+
     }
 
 
@@ -605,6 +778,7 @@ async def debug_predict_disease(
     )
 
     diagnostic_fields = [
+
         "status",
         "message",
         "predicted_class",
@@ -617,16 +791,25 @@ async def debug_predict_disease(
         "crop_probabilities",
         "model_version",
         "inference_ms"
+
     ]
 
     diagnostics = {
+
         key: prediction[key]
+
         for key in diagnostic_fields
+
         if key in prediction
+
     }
 
     return {
+
         "success": True,
+
         "selected_crop": selected_crop,
+
         "diagnostics": diagnostics
+
     }

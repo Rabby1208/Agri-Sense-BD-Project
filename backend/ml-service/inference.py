@@ -1,7 +1,7 @@
 
 """
-AgriSense BD - Multi-model plant classification
-Version: 2.0.0
+AgriSense BD - Memory Optimized Lazy Model Loading
+Version: 2.1.0
 
 Rice:
     wambugu71/crop_leaf_diseases_vit
@@ -9,13 +9,13 @@ Rice:
 Potato, Tomato, Maize:
     neghani/plantvillage-mobilenetv2
 
-Framework:
-    PyTorch + Hugging Face Transformers
-    CPU inference
+Only one model group is kept in memory at a time.
 """
 
+import gc
 import re
 import time
+import threading
 from io import BytesIO
 from dataclasses import dataclass
 
@@ -33,21 +33,26 @@ from transformers import (
 # ==========================================
 
 RICE_MODEL_REPO = "wambugu71/crop_leaf_diseases_vit"
-
 GENERAL_MODEL_REPO = "neghani/plantvillage-mobilenetv2"
 
-SUPPORTED_CROPS = [
-    "rice",
-    "potato",
-    "tomato",
-    "maize"
-]
+SUPPORTED_CROPS = ["rice", "potato", "tomato", "maize"]
 
 CONFIDENCE_THRESHOLD = 0.70
-
 DEVICE = torch.device("cpu")
+MODEL_VERSION = "2.1.0"
 
-MODEL_VERSION = "2.0.0"
+GENERAL_CROPS = {"potato", "tomato", "maize"}
+
+# Reduce CPU thread usage on small instances.
+try:
+    torch.set_num_threads(1)
+except RuntimeError:
+    pass
+
+try:
+    torch.set_num_interop_threads(1)
+except RuntimeError:
+    pass
 
 
 # ==========================================
@@ -64,38 +69,12 @@ class InvalidImageError(Exception):
 
 @dataclass
 class LoadedModel:
-
     repo_id: str
     processor: object
     model: object
     id2label: dict
     crops: list
     version: str
-
-
-class AgriSenseModels:
-
-    def __init__(self, rice_model, general_model):
-
-        self.rice_model = rice_model
-
-        self.general_model = general_model
-
-        self.version = MODEL_VERSION
-
-        self.crops = SUPPORTED_CROPS
-
-    def model_for_crop(self, crop):
-
-        if crop == "rice":
-            return self.rice_model
-
-        if crop in ("potato", "tomato", "maize"):
-            return self.general_model
-
-        raise ValueError(
-            f"Unsupported crop: {crop}"
-        )
 
 
 # ==========================================
@@ -108,7 +87,6 @@ def normalize_crop_name(value):
         return None
 
     value = str(value).strip().lower()
-
     value = value.replace("_", " ")
     value = value.replace("-", " ")
 
@@ -135,17 +113,11 @@ def split_label(label):
 
     label = str(label).strip()
 
-    separators = [
-        "___",
-        "|",
-        "::",
-        "/"
-    ]
+    separators = ["___", "|", "::", "/"]
 
     for separator in separators:
 
         if separator in label:
-
             parts = label.split(separator, 1)
 
             return (
@@ -176,10 +148,7 @@ def split_label(label):
 
             condition = condition.strip(" _-()")
 
-            return (
-                crop_word,
-                condition or label
-            )
+            return crop_word, condition or label
 
     return None, label
 
@@ -190,15 +159,9 @@ def split_label(label):
 
 def clean_condition(condition):
 
-    condition = str(condition)
+    condition = str(condition).replace("_", " ")
 
-    condition = condition.replace("_", " ")
-
-    condition = re.sub(
-        r"\s+",
-        " ",
-        condition
-    )
+    condition = re.sub(r"\s+", " ", condition)
 
     return condition.strip().title()
 
@@ -212,9 +175,7 @@ def is_healthy_condition(condition):
     if not condition:
         return False
 
-    return (
-        "healthy" in str(condition).lower()
-    )
+    return "healthy" in str(condition).lower()
 
 
 # ==========================================
@@ -223,18 +184,15 @@ def is_healthy_condition(condition):
 
 def load_one_model(repo_id):
 
-    print("\nLoading model:", repo_id)
+    print("\nLoading model:", repo_id, flush=True)
 
-    processor = AutoImageProcessor.from_pretrained(
-        repo_id
-    )
+    processor = AutoImageProcessor.from_pretrained(repo_id)
 
     model = AutoModelForImageClassification.from_pretrained(
         repo_id
     )
 
     model.to(DEVICE)
-
     model.eval()
 
     raw_labels = model.config.id2label
@@ -248,13 +206,9 @@ def load_one_model(repo_id):
 
     for label in id2label.values():
 
-        crop_part, condition_part = split_label(
-            label
-        )
+        crop_part, _ = split_label(label)
 
-        crop_name = normalize_crop_name(
-            crop_part
-        )
+        crop_name = normalize_crop_name(crop_part)
 
         if crop_name:
             recognized_crops.add(crop_name)
@@ -266,14 +220,9 @@ def load_one_model(repo_id):
             f"Labels: {list(id2label.values())[:10]}"
         )
 
-    print("Model loaded:", repo_id)
-
-    print("Number of classes:", len(id2label))
-
-    print(
-        "Recognized crops:",
-        sorted(recognized_crops)
-    )
+    print("Model loaded:", repo_id, flush=True)
+    print("Classes:", len(id2label), flush=True)
+    print("Recognized crops:", sorted(recognized_crops), flush=True)
 
     return LoadedModel(
         repo_id=repo_id,
@@ -286,62 +235,156 @@ def load_one_model(repo_id):
 
 
 # ==========================================
-# LOAD BOTH MODELS
+# MEMORY-OPTIMIZED MODEL MANAGER
+# ==========================================
+
+class AgriSenseModels:
+
+    def __init__(self):
+
+        self.version = MODEL_VERSION
+        self.crops = SUPPORTED_CROPS
+
+        # Only one model group is retained.
+        self.active_model = None
+        self.active_group = None
+
+        self._lock = threading.RLock()
+
+    @property
+    def is_model_loaded(self):
+
+        return self.active_model is not None
+
+    @property
+    def loaded_model_group(self):
+
+        return self.active_group
+
+    def _release_active_model(self):
+
+        if self.active_model is not None:
+
+            print(
+                "Releasing previous model:",
+                self.active_group,
+                flush=True
+            )
+
+        self.active_model = None
+        self.active_group = None
+
+        gc.collect()
+
+    def _load_group(self, group):
+
+        # Do not reload an already active model.
+        if (
+            self.active_model is not None
+            and self.active_group == group
+        ):
+            return self.active_model
+
+        # Release the old model before loading another.
+        self._release_active_model()
+
+        if group == "rice":
+
+            new_model = load_one_model(
+                RICE_MODEL_REPO
+            )
+
+            if "rice" not in new_model.crops:
+
+                del new_model
+                gc.collect()
+
+                raise RuntimeError(
+                    "Rice model does not contain Rice classes."
+                )
+
+        elif group == "general":
+
+            new_model = load_one_model(
+                GENERAL_MODEL_REPO
+            )
+
+            missing = GENERAL_CROPS - set(new_model.crops)
+
+            if missing:
+
+                del new_model
+                gc.collect()
+
+                raise RuntimeError(
+                    "General model is missing required crops: "
+                    + ", ".join(sorted(missing))
+                )
+
+        else:
+
+            raise ValueError(
+                f"Unsupported model group: {group}"
+            )
+
+        # Assign only after successful loading and validation.
+        self.active_model = new_model
+        self.active_group = group
+
+        print(
+            "Active model group:",
+            group,
+            flush=True
+        )
+
+        return self.active_model
+
+    def model_for_crop(self, crop):
+
+        crop = str(crop).strip().lower()
+
+        if crop not in SUPPORTED_CROPS:
+
+            raise ValueError(
+                f"Unsupported crop: {crop}"
+            )
+
+        group = (
+            "rice"
+            if crop == "rice"
+            else "general"
+        )
+
+        with self._lock:
+            return self._load_group(group)
+
+
+# ==========================================
+# MODEL INITIALIZATION
 # ==========================================
 
 def load_model(model_dir=None):
 
-    print("\n================================")
-    print("Loading AgriSense ML Models")
-    print("================================")
+    """
+    Initialize only the lightweight model manager.
 
-    rice_model = load_one_model(
-        RICE_MODEL_REPO
-    )
+    Actual Hugging Face model weights are loaded
+    on the first prediction for the selected crop.
+    """
 
-    general_model = load_one_model(
-        GENERAL_MODEL_REPO
-    )
+    print("\n================================", flush=True)
+    print("Initializing AgriSense ML Manager", flush=True)
+    print("Lazy model loading enabled", flush=True)
+    print("================================", flush=True)
 
-    # Validate Rice model
+    manager = AgriSenseModels()
 
-    if "rice" not in rice_model.crops:
+    print("Model manager initialized.", flush=True)
+    print("Supported crops:", SUPPORTED_CROPS, flush=True)
+    print("Device:", DEVICE, flush=True)
+    print("Version:", MODEL_VERSION, flush=True)
 
-        raise RuntimeError(
-            "Rice model does not contain recognizable Rice classes."
-        )
-
-    # Validate general model
-
-    required_crops = {
-        "potato",
-        "tomato",
-        "maize"
-    }
-
-    missing_crops = (
-        required_crops - set(general_model.crops)
-    )
-
-    if missing_crops:
-
-        raise RuntimeError(
-            "General model is missing required crops: "
-            + ", ".join(sorted(missing_crops))
-        )
-
-    print("\nBoth models loaded successfully.")
-
-    print("Supported crops:", SUPPORTED_CROPS)
-
-    print("Device:", DEVICE)
-
-    print("Version:", MODEL_VERSION)
-
-    return AgriSenseModels(
-        rice_model=rice_model,
-        general_model=general_model
-    )
+    return manager
 
 
 # ==========================================
@@ -362,10 +405,7 @@ def load_image(source):
 
             image = Image.open(source)
 
-        image = ImageOps.exif_transpose(
-            image
-        )
-
+        image = ImageOps.exif_transpose(image)
         image = image.convert("RGB")
 
         return image
@@ -385,11 +425,7 @@ def load_image(source):
 # IMAGE PREDICTION
 # ==========================================
 
-def predict_image(
-    source,
-    model_bundle,
-    crop="rice"
-):
+def predict_image(source, model_bundle, crop="rice"):
 
     return predict_image_for_crop(
         source,
@@ -423,27 +459,20 @@ def predict_image_for_crop(
     if model_bundle is None:
 
         raise RuntimeError(
-            "Models have not been loaded."
+            "Model manager has not been initialized."
         )
 
     image = load_image(source)
 
+    # Loads only the required model group.
     selected_model = model_bundle.model_for_crop(
         selected_crop
     )
-
-    # ======================================
-    # PREPROCESS IMAGE
-    # ======================================
 
     inputs = selected_model.processor(
         images=image,
         return_tensors="pt"
     )
-
-    # ======================================
-    # MODEL INFERENCE
-    # ======================================
 
     with torch.inference_mode():
 
@@ -456,17 +485,12 @@ def predict_image_for_crop(
             dim=-1
         )
 
-    # ======================================
-    # CLASS PROBABILITIES
-    # ======================================
-
     ranked_indices = torch.argsort(
         probabilities,
         descending=True
     ).tolist()
 
     crop_probabilities = {}
-
     all_predictions = []
 
     for class_index, probability_tensor in enumerate(
@@ -499,8 +523,6 @@ def predict_image_for_crop(
                 ) + confidence
             )
 
-        if detected_crop:
-
             formatted_class = (
                 f"{detected_crop}|{condition_part}"
             )
@@ -526,10 +548,6 @@ def predict_image_for_crop(
 
         })
 
-    # ======================================
-    # TOP PREDICTIONS
-    # ======================================
-
     top_predictions = [
 
         all_predictions[index]
@@ -540,22 +558,13 @@ def predict_image_for_crop(
 
     top_prediction = top_predictions[0]
 
-    predicted_crop = top_prediction.get(
-        "crop"
-    )
-
-    condition = top_prediction.get(
-        "display_name"
-    )
+    predicted_crop = top_prediction.get("crop")
+    condition = top_prediction.get("display_name")
 
     confidence = top_prediction.get(
         "confidence",
         0.0
     )
-
-    # ======================================
-    # DOMINANT CROP
-    # ======================================
 
     dominant_crop = None
 
@@ -566,20 +575,10 @@ def predict_image_for_crop(
             key=crop_probabilities.get
         )
 
-    # ======================================
-    # INFERENCE TIME
-    # ======================================
-
     inference_ms = round(
-        (
-            time.perf_counter() - started
-        ) * 1000,
+        (time.perf_counter() - started) * 1000,
         2
     )
-
-    # ======================================
-    # COMMON RESPONSE FIELDS
-    # ======================================
 
     common = {
 
@@ -588,21 +587,15 @@ def predict_image_for_crop(
         "inference_ms": inference_ms,
 
         "crop_probabilities": {
-
             key: round(value, 6)
-
             for key, value in crop_probabilities.items()
-
         },
 
         "top_predictions": top_predictions,
 
         "predicted_class": top_prediction["class"],
 
-        "confidence": round(
-            confidence,
-            6
-        ),
+        "confidence": round(confidence, 6),
 
         "organ": "leaf"
 
@@ -718,11 +711,7 @@ def assess_plant(
     crop="rice"
 ):
 
-    if not isinstance(
-        sources,
-        (list, tuple)
-    ):
-
+    if not isinstance(sources, (list, tuple)):
         sources = [sources]
 
     results = []
@@ -738,11 +727,8 @@ def assess_plant(
         results.append(result)
 
     return {
-
         "total_images": len(results),
-
         "results": results
-
     }
 
 
@@ -760,11 +746,13 @@ def get_model_information(model_bundle):
 
     return {
 
-        "loaded": True,
+        "loaded": model_bundle.is_model_loaded,
 
         "version": model_bundle.version,
 
         "supported_crops": model_bundle.crops,
+
+        "active_model_group": model_bundle.loaded_model_group,
 
         "rice_model": RICE_MODEL_REPO,
 
