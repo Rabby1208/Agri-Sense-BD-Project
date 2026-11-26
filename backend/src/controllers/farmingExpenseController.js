@@ -1,14 +1,13 @@
 
 const db = require("../config/db");
 
-// Check whether the crop belongs to the logged-in farmer
+// Check whether the selected crop belongs to the logged-in farmer.
+// farmer_crops.farmer_id stores users.id, not farmer_profiles.id.
 async function verifyCropOwnership(connection, cropId, userId) {
   const [rows] = await connection.execute(
-    `SELECT fc.id
-     FROM farmer_crops fc
-     INNER JOIN farmer_profiles fp
-       ON fp.id = fc.farmer_id
-     WHERE fc.id = ? AND fp.user_id = ?`,
+    `SELECT id
+     FROM farmer_crops
+     WHERE id = ? AND farmer_id = ?`,
     [cropId, userId]
   );
 
@@ -37,13 +36,23 @@ function validateExpense(data) {
   }
 
   if (
+    !Number.isInteger(Number(farmer_crop_id)) ||
+    Number(farmer_crop_id) <= 0
+  ) {
+    return "Please select a valid crop.";
+  }
+
+  if (
     !Number.isFinite(Number(amount)) ||
     Number(amount) <= 0
   ) {
     return "Enter a valid expense amount.";
   }
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(expense_date)) {
+  if (
+    typeof expense_date !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(expense_date)
+  ) {
     return "Expense date must be in YYYY-MM-DD format.";
   }
 
@@ -70,9 +79,7 @@ exports.getExpenses = async (req, res) => {
          ON fc.id = f.farmer_crop_id
        INNER JOIN crops c
          ON c.id = fc.crop_id
-       INNER JOIN farmer_profiles fp
-         ON fp.id = fc.farmer_id
-       WHERE fp.user_id = ?
+       WHERE fc.farmer_id = ?
        ORDER BY f.expense_date DESC, f.id DESC`,
       [userId]
     );
@@ -122,7 +129,7 @@ exports.addExpense = async (req, res) => {
 
     const owned = await verifyCropOwnership(
       db,
-      farmer_crop_id,
+      Number(farmer_crop_id),
       userId
     );
 
@@ -145,7 +152,7 @@ exports.addExpense = async (req, res) => {
        )
        VALUES (?, ?, ?, ?, ?, ?)`,
       [
-        farmer_crop_id,
+        Number(farmer_crop_id),
         expense_name.trim(),
         vendor_name ? vendor_name.trim() : null,
         Number(amount),
@@ -195,7 +202,7 @@ exports.updateExpense = async (req, res) => {
 
     const owned = await verifyCropOwnership(
       db,
-      farmer_crop_id,
+      Number(farmer_crop_id),
       userId
     );
 
@@ -212,9 +219,7 @@ exports.updateExpense = async (req, res) => {
        FROM farming_costs f
        INNER JOIN farmer_crops fc
          ON fc.id = f.farmer_crop_id
-       INNER JOIN farmer_profiles fp
-         ON fp.id = fc.farmer_id
-       WHERE f.id = ? AND fp.user_id = ?`,
+       WHERE f.id = ? AND fc.farmer_id = ?`,
       [expenseId, userId]
     );
 
@@ -236,7 +241,7 @@ exports.updateExpense = async (req, res) => {
          description = ?
        WHERE id = ?`,
       [
-        farmer_crop_id,
+        Number(farmer_crop_id),
         expense_name.trim(),
         vendor_name ? vendor_name.trim() : null,
         Number(amount),
@@ -271,9 +276,7 @@ exports.deleteExpense = async (req, res) => {
        FROM farming_costs f
        INNER JOIN farmer_crops fc
          ON fc.id = f.farmer_crop_id
-       INNER JOIN farmer_profiles fp
-         ON fp.id = fc.farmer_id
-       WHERE f.id = ? AND fp.user_id = ?`,
+       WHERE f.id = ? AND fc.farmer_id = ?`,
       [expenseId, userId]
     );
 
