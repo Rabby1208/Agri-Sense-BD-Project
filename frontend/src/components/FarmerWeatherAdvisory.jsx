@@ -601,31 +601,83 @@ function FarmerWeatherAdvisory({
     setError("");
 
     try {
-      const geoUrl = new URL(
-        "https://geocoding-api.open-meteo.com/v1/search"
-      );
+      const normalizePlaceName = (value) =>
+        String(value || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/bangladesh/g, "")
+          .replace(/\bsadar\b/g, "")
+          .replace(/district/g, "")
+          .replace(/[^a-z0-9]+/g, " ")
+          .trim();
 
-      geoUrl.searchParams.set("name", query);
-      geoUrl.searchParams.set("count", "1");
-      geoUrl.searchParams.set("language", "en");
-      geoUrl.searchParams.set("format", "json");
+      const baseQuery = query
+        .replace(/,?\s*bangladesh\s*$/i, "")
+        .replace(/\s+sadar\s*$/i, "")
+        .trim();
 
-      const geoResponse = await fetch(geoUrl);
+      const searchTerms = [...new Set([query, baseQuery])]
+        .filter((term) => term.length >= 2);
 
-      if (!geoResponse.ok) {
-        throw new Error(
-          t("Location could not be found.", "লোকেশন খুঁজে পাওয়া যায়নি।", isBangla)
+      let place = null;
+
+      for (const searchTerm of searchTerms) {
+        const geoUrl = new URL(
+          "https://geocoding-api.open-meteo.com/v1/search"
         );
-      }
 
-      const geoData = await geoResponse.json();
-      const place = geoData.results?.[0];
+        geoUrl.searchParams.set("name", searchTerm);
+        geoUrl.searchParams.set("count", "10");
+        geoUrl.searchParams.set("countryCode", "BD");
+        geoUrl.searchParams.set("language", "en");
+        geoUrl.searchParams.set("format", "json");
+
+        const geoResponse = await fetch(geoUrl);
+
+        if (!geoResponse.ok) {
+          continue;
+        }
+
+        const geoData = await geoResponse.json();
+
+        const bangladeshResults = (geoData.results || []).filter(
+          (result) => result.country_code === "BD"
+        );
+
+        if (bangladeshResults.length === 0) {
+          continue;
+        }
+
+        const normalizedSearch = normalizePlaceName(searchTerm);
+
+        bangladeshResults.sort((a, b) => {
+          const aName = normalizePlaceName(a.name);
+          const bName = normalizePlaceName(b.name);
+
+          const aExact = aName === normalizedSearch ? 1 : 0;
+          const bExact = bName === normalizedSearch ? 1 : 0;
+
+          if (aExact !== bExact) return bExact - aExact;
+
+          const aMatch = aName.startsWith(normalizedSearch) ? 1 : 0;
+          const bMatch = bName.startsWith(normalizedSearch) ? 1 : 0;
+
+          if (aMatch !== bMatch) return bMatch - aMatch;
+
+          return (b.population || 0) - (a.population || 0);
+        });
+
+        place = bangladeshResults[0];
+
+        if (place) break;
+      }
 
       if (!place) {
         throw new Error(
           t(
-            "No information was found for this area. Try another location.",
-            "এই এলাকার তথ্য পাওয়া যায়নি। অন্য এলাকার নাম দিয়ে চেষ্টা করো।",
+            "No Bangladesh location was found. Try entering the district name in English.",
+            "?????????? ?? ?????? ???? ????? ?????? ????? ??? ???????? ???? ?????? ????",
             isBangla
           )
         );

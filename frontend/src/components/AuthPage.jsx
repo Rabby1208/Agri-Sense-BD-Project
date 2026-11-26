@@ -45,7 +45,6 @@ function AuthPage({ onLogin, onBack }) {
     password: "",
     address: "",
     district: "",
-    upazila: "",
   });
 
   const translateMessage = (message) => {
@@ -141,7 +140,6 @@ function AuthPage({ onLogin, onBack }) {
               password: form.password,
               address: form.address.trim(),
               district: form.district.trim(),
-              upazila: form.upazila.trim(),
             };
 
       const response = await axios.post(
@@ -474,20 +472,6 @@ function AuthPage({ onLogin, onBack }) {
                         name="district"
                         placeholder={tx("District", "জেলা")}
                         value={form.district}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    <div>
-                      <label>
-                        {tx("Upazila", "উপজেলা")}
-                      </label>
-
-                      <input
-                        type="text"
-                        name="upazila"
-                        placeholder={tx("Upazila", "উপজেলা")}
-                        value={form.upazila}
                         onChange={handleChange}
                       />
                     </div>
