@@ -1,11 +1,14 @@
-﻿import os
+﻿
+import os
 import sys
 import importlib.util
+import threading
 from io import BytesIO
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.concurrency import run_in_threadpool
 from PIL import Image, UnidentifiedImageError
 
 
@@ -31,6 +34,9 @@ MODULE_NAME = "agrisense_model_inference"
 
 MODEL = None
 INFERENCE = None
+
+# Prevent simultaneous CPU-heavy model predictions.
+PREDICTION_LOCK = threading.Lock()
 
 
 # ==========================================
@@ -243,6 +249,30 @@ async def validate_image(file: UploadFile):
 
 
 # ==========================================
+# THREAD-SAFE MODEL PREDICTION
+# ==========================================
+
+def predict_image_safely(image_bytes, selected_crop):
+    """
+    Run synchronous PyTorch inference outside the
+    FastAPI event loop.
+
+    The lock ensures that only one prediction uses
+    the loaded model at a time.
+    """
+
+    if MODEL is None or INFERENCE is None:
+        raise RuntimeError("ML model is not available.")
+
+    with PREDICTION_LOCK:
+        return INFERENCE.predict_image(
+            image_bytes,
+            MODEL,
+            selected_crop
+        )
+
+
+# ==========================================
 # SHARED MODEL PREDICTION
 # ==========================================
 
@@ -268,9 +298,10 @@ async def run_model_prediction(crop, image):
     image_bytes = await validate_image(image)
 
     try:
-        prediction = INFERENCE.predict_image(
+        # Run CPU-heavy inference in a worker thread.
+        prediction = await run_in_threadpool(
+            predict_image_safely,
             image_bytes,
-            MODEL,
             selected_crop
         )
 
