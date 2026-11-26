@@ -1,6 +1,26 @@
 
 const db = require("../config/db");
 
+const ML_TIMEOUT_MS = 120000;
+const ML_MAX_ATTEMPTS = 2;
+const ML_RETRY_DELAY_MS = 1500;
+
+const ALLOWED_CROPS = [
+  "Rice",
+  "Potato",
+  "Tomato",
+  "Maize",
+];
+
+class MLServiceError extends Error {
+  constructor(message, status = 503, retryable = false) {
+    super(message);
+    this.name = "MLServiceError";
+    this.status = status;
+    this.retryable = retryable;
+  }
+}
+
 function extractDiseaseName(result) {
   if (result.detection_status === "crop_mismatch") {
     return null;
@@ -20,48 +40,216 @@ function extractDiseaseName(result) {
   );
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getMLServiceUrl() {
+  const configuredUrl = process.env.ML_SERVICE_URL;
+
+  if (!configuredUrl) {
+    throw new MLServiceError(
+      "ML service URL is not configured.",
+      503,
+      false
+    );
+  }
+
+  let parsedUrl;
+
+  try {
+    parsedUrl = new URL(configuredUrl);
+  } catch {
+    throw new MLServiceError(
+      "Invalid ML service URL configuration.",
+      503,
+      false
+    );
+  }
+
+  if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+    throw new MLServiceError(
+      "Unsupported ML service URL protocol.",
+      503,
+      false
+    );
+  }
+
+  return configuredUrl.replace(/\/+$/, "");
+}
+
+function createPredictionForm(file) {
+  const formData = new FormData();
+
+  const imageBlob = new Blob(
+    [file.buffer],
+    { type: file.mimetype }
+  );
+
+  formData.append(
+    "image",
+    imageBlob,
+    file.originalname || "plant-image.jpg"
+  );
+
+  return formData;
+}
+
+async function requestMLPrediction(mlUrl, file) {
+  let lastError = null;
+
+  for (
+    let attempt = 1;
+    attempt <= ML_MAX_ATTEMPTS;
+    attempt++
+  ) {
+    try {
+      console.log(
+        `ML prediction attempt ${attempt}/${ML_MAX_ATTEMPTS}`
+      );
+
+      const formData = createPredictionForm(file);
+
+      const response = await fetch(mlUrl, {
+        method: "POST",
+        body: formData,
+        signal: AbortSignal.timeout(ML_TIMEOUT_MS),
+      });
+
+      const contentType =
+        response.headers.get("content-type") || "";
+
+      const responseText = await response.text();
+
+      const isJsonResponse =
+        contentType.toLowerCase().includes("application/json") ||
+        contentType.toLowerCase().includes("+json");
+
+      let result = null;
+
+      if (isJsonResponse) {
+        try {
+          result = JSON.parse(responseText);
+        } catch {
+          lastError = new MLServiceError(
+            "ML service returned malformed JSON.",
+            502,
+            true
+          );
+        }
+      } else {
+        lastError = new MLServiceError(
+          "ML service returned a non-JSON response.",
+          502,
+          true
+        );
+      }
+
+      console.log("ML HTTP Status:", response.status);
+      console.log("ML Content-Type:", contentType);
+
+      if (!response.ok) {
+        const errorMessage =
+          result?.detail ||
+          result?.message ||
+          `ML service returned HTTP ${response.status}.`;
+
+        const retryable =
+          response.status === 408 ||
+          response.status === 429 ||
+          response.status >= 500;
+
+        lastError = new MLServiceError(
+          errorMessage,
+          response.status,
+          retryable
+        );
+      } else if (!isJsonResponse || result === null) {
+        lastError =
+          lastError ||
+          new MLServiceError(
+            "ML service returned an invalid response.",
+            502,
+            true
+          );
+      } else if (
+        typeof result !== "object" ||
+        Array.isArray(result)
+      ) {
+        lastError = new MLServiceError(
+          "Unexpected ML response structure.",
+          502,
+          true
+        );
+      } else if (result.success !== true) {
+        lastError = new MLServiceError(
+          result.detail ||
+          result.message ||
+          "ML prediction was unsuccessful.",
+          502,
+          false
+        );
+      } else {
+        return result;
+      }
+
+    } catch (error) {
+      const isTimeout =
+        error.name === "TimeoutError" ||
+        error.name === "AbortError";
+
+      lastError = new MLServiceError(
+        isTimeout
+          ? "ML prediction timed out."
+          : "Unable to communicate with the ML service.",
+        isTimeout ? 504 : 503,
+        true
+      );
+
+      console.error(
+        `ML attempt ${attempt} failed:`,
+        error.message
+      );
+    }
+
+    if (
+      attempt < ML_MAX_ATTEMPTS &&
+      lastError?.retryable
+    ) {
+      console.log("Retrying ML service request...");
+      await sleep(ML_RETRY_DELAY_MS);
+      continue;
+    }
+
+    break;
+  }
+
+  throw lastError || new MLServiceError(
+    "ML prediction failed.",
+    503,
+    false
+  );
+}
+
 exports.predictDisease = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: "A leaf image is required",
+        message: "A leaf image is required.",
       });
     }
 
     const { crop } = req.body;
 
-    const allowedCrops = [
-      "Rice",
-      "Potato",
-      "Tomato",
-      "Maize",
-    ];
-
-    if (!crop || !allowedCrops.includes(crop)) {
+    if (!crop || !ALLOWED_CROPS.includes(crop)) {
       return res.status(400).json({
         success: false,
-        message: "Select a valid crop",
+        message: "Select a valid crop.",
       });
     }
 
-    const formData = new FormData();
-
-    const imageBlob = new Blob(
-      [req.file.buffer],
-      { type: req.file.mimetype }
-    );
-
-    formData.append(
-      "image",
-      imageBlob,
-      req.file.originalname
-    );
-
-    const mlServiceUrl = (
-      process.env.ML_SERVICE_URL ||
-      "http://127.0.0.1:8000"
-    ).replace(/\/+$/, "");
+    const mlServiceUrl = getMLServiceUrl();
 
     const mlUrl =
       `${mlServiceUrl}/predict?crop=${encodeURIComponent(crop)}`;
@@ -71,63 +259,10 @@ exports.predictDisease = async (req, res) => {
     console.log("Image MIME type:", req.file.mimetype);
     console.log("Image size:", req.file.size);
 
-    const response = await fetch(mlUrl, {
-      method: "POST",
-      body: formData,
-      signal: AbortSignal.timeout(120000),
-    });
-
-    const responseText = await response.text();
-
-    console.log("ML HTTP Status:", response.status);
-    console.log(
-      "ML Content-Type:",
-      response.headers.get("content-type")
+    const result = await requestMLPrediction(
+      mlUrl,
+      req.file
     );
-    console.log(
-      "ML Raw Response:",
-      responseText.substring(0, 3000)
-    );
-
-    let result;
-
-    try {
-      result = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error(
-        "ML JSON Parse Error:",
-        parseError.message
-      );
-
-      return res.status(502).json({
-        success: false,
-        message: "ML service returned an invalid response.",
-        ml_status: response.status,
-      });
-    }
-
-    if (!response.ok) {
-      return res.status(502).json({
-        success: false,
-        message:
-          result.detail ||
-          result.message ||
-          "ML prediction failed",
-      });
-    }
-
-    if (
-      !result ||
-      typeof result !== "object" ||
-      Array.isArray(result)
-    ) {
-      console.error("Unexpected ML response structure:", result);
-
-      return res.status(502).json({
-        success: false,
-        message: "Unexpected ML response structure.",
-      });
-    }
 
     const diseaseName = extractDiseaseName(result);
 
@@ -173,6 +308,7 @@ exports.predictDisease = async (req, res) => {
           JSON.stringify(result),
         ]
       );
+
     } catch (databaseError) {
       console.error(
         "Disease History Save Error:",
@@ -193,6 +329,13 @@ exports.predictDisease = async (req, res) => {
       "Disease Detection Error:",
       error.stack || error.message
     );
+
+    if (error instanceof MLServiceError) {
+      return res.status(error.status).json({
+        success: false,
+        message: error.message,
+      });
+    }
 
     const isTimeout =
       error.name === "TimeoutError" ||
