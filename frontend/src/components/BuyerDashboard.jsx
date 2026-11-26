@@ -417,7 +417,7 @@ function BuyerDashboard({ user, onLogout }) {
                             alt={item.crop_name || "Crop"}
                           />
                         ) : (
-                          <span>ðŸŒ¾</span>
+                          <span>{"\u{1F33E}"}</span>
                         )}
 
                         <span className="buyer-available-tag">
@@ -429,7 +429,7 @@ function BuyerDashboard({ user, onLogout }) {
                         <h3>{item.crop_name || "Unnamed Crop"}</h3>
 
                         <div className="buyer-product-price">
-                          à§³{formatPrice(item.price_per_unit)}
+                          \u09F3{formatPrice(item.price_per_unit)}
                           <small> / {item.unit || "KG"}</small>
                         </div>
 
@@ -533,12 +533,12 @@ function BuyerDashboard({ user, onLogout }) {
 
                       <div>
                         <span>Unit Price</span>
-                        <strong>à§³{formatPrice(order.unit_price)}</strong>
+                        <strong>\u09F3{formatPrice(order.unit_price)}</strong>
                       </div>
 
                       <div>
                         <span>Total Amount</span>
-                        <strong>à§³{formatPrice(order.total_amount)}</strong>
+                        <strong>\u09F3{formatPrice(order.total_amount)}</strong>
                       </div>
 
                       <div>
@@ -600,7 +600,7 @@ function BuyerDashboard({ user, onLogout }) {
             </div>
 
             <div className="buyer-modal-price">
-              à§³{formatPrice(selectedListing.price_per_unit)}
+              \u09F3{formatPrice(selectedListing.price_per_unit)}
               <span> / {selectedListing.unit || "KG"}</span>
             </div>
 
@@ -657,7 +657,7 @@ function BuyerDashboard({ user, onLogout }) {
                 <div className="buyer-order-total">
                   <span>Estimated Total</span>
                   <strong>
-                    à§³
+                    \u09F3
                     {formatPrice(
                       Number(quantity) *
                       Number(selectedListing.price_per_unit)
@@ -696,4 +696,6 @@ function BuyerDashboard({ user, onLogout }) {
 }
 
 export default BuyerDashboard;
+
+
 
